@@ -2955,6 +2955,22 @@ function flexprompt.get_git_remote(git_dir)
     end
 end
 
+-- Gets user name for current repo.
+-- @return  username
+--
+-- Synchronous call.
+function flexprompt.get_git_username(git_dir)
+    if not git_dir then return end
+
+    -- Load git config info.
+    if not git_config.load(git_dir) then return end
+
+    local username = git_config.get('user', 'name') or ''
+    if username ~= '' then
+        return username
+    end
+end
+
 --------------------------------------------------------------------------------
 -- SCM detectors.
 

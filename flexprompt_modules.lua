@@ -1054,6 +1054,14 @@ local function render_git(args)
                 branch = branch .. flexprompt.make_fluent_text("->") .. remote
             end
         end
+        
+        -- Add username to branch name if requested.
+        if flexprompt.parse_arg_keyword(args, "un", "username") then
+            local username = flexprompt.get_git_username(git_dir)
+            if username then
+                branch = username .. flexprompt.make_fluent_text("=>") .. branch
+            end
+        end
     end
 
     -- Segments.
