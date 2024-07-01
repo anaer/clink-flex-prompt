@@ -1059,7 +1059,7 @@ local function render_git(args)
         if flexprompt.parse_arg_keyword(args, "un", "username") then
             local username = flexprompt.get_git_username(git_dir)
             if username then
-                branch = username .. flexprompt.make_fluent_text("=>") .. branch
+                branch = username .. flexprompt.make_fluent_text("  ", "magenta") .. branch
             end
         end
     end
