@@ -2956,7 +2956,7 @@ function flexprompt.get_git_remote(git_dir)
 end
 
 -- Gets user name for current repo.
--- @return  username
+-- @return  username C| 表示当前.git/config下配置, G| 表示在上级配置文件中配置
 --
 -- Synchronous call.
 function flexprompt.get_git_username(git_dir)
@@ -2965,9 +2965,21 @@ function flexprompt.get_git_username(git_dir)
     -- Load git config info.
     if not git_config.load(git_dir) then return end
 
+    -- 先从.git/config获取配置
     local username = git_config.get('user', 'name') or ''
+
     if username ~= '' then
-        return username
+        return "C|"..username
+    end
+
+    -- 再调用git config --get获取上级生效的配置
+    local file = flexprompt.popenyield(git_command("config --get user.name"))
+    if file then
+        local username = file:read("*l")
+        file:close()
+        if username and username ~= "" then
+            return "G|"..username
+        end
     end
 end
 
