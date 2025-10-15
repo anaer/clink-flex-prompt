@@ -27,9 +27,9 @@ flexprompt.settings.nerdfonts_width = 2
 flexprompt.settings.right_frame = "none"
 
 -- 左侧提示栏
-flexprompt.settings.left_prompt = "{histlabel}{cwd:color=magenta:type=smart}{git:username:nountracked:counts}{exit}{duration}{time:dim:color=green:format=%a %H:%M}"
+flexprompt.settings.left_prompt = "{histlabel}{cwd:color=magenta:type=smart}{git:username:nountracked:counts}{exit}{duration}"
 -- 右侧提示栏
-flexprompt.settings.right_prompt = ""
+flexprompt.settings.right_prompt = "{time:dim:color=green:format=%a %H:%M:%S}"
 
 -- 分隔符形状 pointed: >
 flexprompt.settings.separators = "pointed"
