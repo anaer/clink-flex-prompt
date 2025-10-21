@@ -27,9 +27,9 @@ flexprompt.settings.nerdfonts_width = 2
 flexprompt.settings.right_frame = "none"
 
 -- 左侧提示栏
-flexprompt.settings.left_prompt = "{histlabel}{cwd:color=magenta:type=smart}{git:username:nountracked:counts}{exit}{duration}"
--- 右侧提示栏
-flexprompt.settings.right_prompt = "{time:dim:color=green:format=%a %H:%M:%S}"
+flexprompt.settings.left_prompt = "{time:dim:color=green:format=%a %H:%M:%S}{histlabel}{cwd:color=magenta:type=smart}{git:username:nountracked:counts}{exit}{duration}"
+-- 右侧提示栏 可能存在兼容问题, 导致光标消失 回车也没用
+flexprompt.settings.right_prompt = ""
 
 -- 分隔符形状 pointed: >
 flexprompt.settings.separators = "pointed"
