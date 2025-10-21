@@ -6,6 +6,7 @@ local normal = "\x1b[m"
 local bold = "\x1b[1m"
 local brightgreen = "\x1b[92m"
 local brightyellow = "\x1b[93m"
+local brightblue = "\x1b[94m"
 local static_cursor = "\x1b[7m " .. normal
 
 local _transient
@@ -37,6 +38,14 @@ local function spairs(t, order)
     end
 end
 
+local function make_hyperlink(display, address)
+    local hyperlink = ""
+    if display then
+        hyperlink = brightblue .. "\x1b]8;;" .. address .. "\a" .. display .. "\x1b]8;;\a" .. normal
+    end
+    return hyperlink
+end
+
 local function readinput()
     if console.readinput then
         local key = console.readinput()
@@ -49,11 +58,19 @@ local function readinput()
     end
 end
 
-local function readchoice(choices)
+local function readchoice(choices, onidle, timeout)
     if not choices then error("missing choices") end
 
     repeat
         clink.print("Choice [" .. choices .. "]: ", NONL)
+
+        while onidle and timeout do
+            if console.checkinput(timeout) then
+                break
+            end
+            onidle()
+        end
+
         local s = readinput()
         clink.print("\x1b[G\x1b[K", NONL)
 
@@ -281,9 +298,9 @@ end
 local function apply_time_format(s)
     if not s then return end
 
-    if _striptime then
+    if _striptime or _timeformat == "1" then
         s = s:gsub("{time[^}]*}", "")
-        s = replace_arg(s, "rbubble", "format", nil)
+        s = replace_arg(s, "rbubble", "format", "")
     elseif _timeformat then
         if _timeformat == "2" then
             s = replace_arg(s, "time", "format", "%%H:%%M:%%S")
@@ -418,6 +435,125 @@ local function choose_setting(settings, title, choices_name, setting_name, subse
     elseif s == "q" then -- luacheck: ignore 542
     else
         settings[setting_name] = subset[tonumber(s)]
+    end
+    return s
+end
+
+local function choose_blur_effect(settings, title, end_name, callout)
+    local target = settings.fade_target
+
+::again::
+    local choices = "" -- luacheck: ignore 311
+    local preview
+
+    refresh_width(settings)
+
+    clear_screen()
+    display_title(title)
+    clink.print()
+
+    choices = "12bw"
+
+    clink.print("(1)  No fade.\n")
+    preview = copy_table(settings)
+    preview.fade_target = target
+    display_preview(preview, nil, nil, callout)
+    clink.print()
+
+    clink.print("(2)  Fade.\n")
+    preview = copy_table(settings)
+    preview["fade_" .. end_name] = true
+    preview.fade_target = target
+    display_preview(preview)
+    clink.print()
+
+    if settings.style == "rainbow" then
+        clink.print()
+        clink.print("    " .. brightyellow .. "NOTE:" .. normal .. "  When using the Rainbow style with Windows Terminal, the fade")
+        clink.print("           colors may be inaccurate (see " .. make_hyperlink("Windows Terminal issue 10639", "https://github.com/microsoft/terminal/issues/10639") .. ").")
+        clink.print()
+        clink.print()
+    end
+
+    clink.print("(b)  Assume background is black when fading.")
+    clink.print("(w)  Assume background is white when fading.")
+    clink.print()
+
+    choices = display_restart(choices)
+    choices = display_quit(choices)
+
+    local s = readchoice(choices)
+    if not s then return end
+
+    if s == "r" then -- luacheck: ignore 542
+    elseif s == "q" then -- luacheck: ignore 542
+    elseif s == "b" then
+        target = "48;5;232"
+        goto again
+    elseif s == "w" then
+        target = "48;5;255"
+        goto again
+    else
+        if s == "2" then
+            settings["fade_" .. end_name] = true
+        end
+        settings.fade_target = target
+    end
+    return s
+end
+
+local function choose_fade_width(settings, title)
+    local choices = "" -- luacheck: ignore 311
+    local preview
+
+    refresh_width(settings)
+
+    clear_screen()
+    display_title(title)
+    clink.print()
+
+    choices = "12345"
+
+    clink.print("(1)  Very small.\n")
+    preview = copy_table(settings)
+    preview.fade_width = 1
+    display_preview(preview)
+    clink.print()
+
+    clink.print("(2)  Small.\n")
+    preview = copy_table(settings)
+    preview.fade_width = 2
+    display_preview(preview)
+    clink.print()
+
+    clink.print("(3)  Medium.\n")
+    preview = copy_table(settings)
+    preview.fade_width = 3
+    display_preview(preview)
+    clink.print()
+
+    clink.print("(4)  Large.\n")
+    preview = copy_table(settings)
+    preview.fade_width = 4
+    display_preview(preview)
+    clink.print()
+
+    clink.print("(5)  Very large.\n")
+    preview = copy_table(settings)
+    preview.fade_width = 5
+    display_preview(preview)
+    clink.print()
+
+    choices = display_restart(choices)
+    choices = display_quit(choices)
+
+    local s = readchoice(choices)
+    if not s then return end
+
+    if s == "r" then -- luacheck: ignore 542
+    elseif s == "q" then -- luacheck: ignore 542
+    elseif tonumber(s) then
+        settings.fade_width = tonumber(s)
     end
     return s
 end
@@ -714,6 +850,59 @@ local function choose_icons(settings, title)
     return s
 end
 
+local function choose_animate(settings, title)
+    local choices = "" -- luacheck: ignore 311
+
+    if not console.checkinput then
+        return
+    end
+
+    refresh_width(settings)
+
+    clear_screen()
+    display_title(title)
+    clink.print()
+
+    choices = "yn"
+
+    local _, row = console.getcursorpos()
+    local col = 14
+
+    local index = 1
+    local anim_list = flexprompt.get_refreshing_icon_animation_list()
+    local anim_count = #anim_list
+    local function get_animated_icon()
+        local icon = anim_list[index]
+        index = (index % anim_count) + 1
+        return icon
+    end
+
+    clink.print("(y)  Yes.    "..brightgreen..get_animated_icon()..normal.."\n")
+    clink.print("(n)  No.     "..brightgreen..flexprompt.get_icon("refresh")..normal.."\n")
+
+    choices = display_restart(choices)
+    choices = display_quit(choices)
+
+    local prolog = string.format("\x1b[s\x1b[%d;%dH", row, col)..brightgreen
+    local epilog = normal.."\x1b[u"
+    local function onidle()
+        clink.print(prolog..get_animated_icon()..epilog, NONL)
+    end
+
+    local s = readchoice(choices, onidle, 0.15)
+    if not s then return end
+
+    if s == "r" then -- luacheck: ignore 542
+    elseif s == "q" then -- luacheck: ignore 542
+    else
+        settings.can_animate_refresh = nil
+        if s == "y" then
+            settings.can_animate_refresh = true
+        end
+    end
+    return s
+end
+
 local function choose_transient(settings, title)
     local choices = "" -- luacheck: ignore 311
 
@@ -899,9 +1088,13 @@ local function config_wizard()
             clink.print("\x1b[4H\x1b[J", NONL)
             display_centered("Which of these looks like an icon of a "..brightgreen.."wrist watch"..normal.."?")
             clink.print("\n")
-            clink.print("(1)  "..brightgreen..""..normal.."\n")
-            clink.print("(2)  "..brightgreen..""..normal.."\n")
+            clink.print("(1)  "..brightgreen..""..normal.."  (nerd fonts v3)\n")
+            clink.print("(2)  "..brightgreen..""..normal.."  (nerd fonts v2)\n")
             clink.print("(3)  Neither.\n")
+            clink.print("NOTE:  Some fonts may have a mixture of v2 icons and v3 icons.  If both icons")
+            clink.print("       look like a wrist watch, then find which nerd fonts version the font")
+            clink.print("       says it uses and choose based on that.  If icons end up looking wrong,")
+            clink.print("       you can come back here to change the choice later.\n")
             choices = "123"
             choices = display_restart(choices)
             choices = display_quit(choices)
@@ -1091,6 +1284,34 @@ local function config_wizard()
             if s == "r" then goto continue end
         end
 
+        -- Ask whether to use colored blur.
+        if preview.use_8bit_color and console.getcolortable and
+                (preview.style == "classic" or preview.style == "rainbow") then
+            if flexprompt.is_powerline_cap(flexprompt.choices.caps[preview.heads]) then
+                callout = { 4, 2, "\x1b[1;33m↓\x1b[A\x1b[2Dhead\x1b[m" }
+                s = choose_blur_effect(preview, "Fade for Heads", "head", callout)
+                if not s or s == "q" then break end
+                if s == "r" then goto continue end
+            end
+            if flexprompt.is_powerline_cap(flexprompt.choices.caps[preview.tails]) then
+                callout = { 4, 3, "\x1b[1;33m↓\x1b[A\x1b[2Dtail\x1b[m" }
+                s = choose_blur_effect(preview, "Fade for Tails", "tail", callout)
+                if not s or s == "q" then break end
+                if s == "r" then goto continue end
+            end
+            if preview.style == "rainbow" and
+                    flexprompt.is_powerline_cap(flexprompt.choices.caps[preview.separators]) then
+                s = choose_blur_effect(preview, "Fade for Separators", "sep")
+                if not s or s == "q" then break end
+                if s == "r" then goto continue end
+            end
+            if preview.fade_head or preview.fade_sep or preview.fade_tail then
+                s = choose_fade_width(preview, "Fade Width")
+                if not s or s == "q" then break end
+                if s == "r" then goto continue end
+            end
+        end
+
         -- Choose sides after choosing tails, so there's a good anchor for
         -- the tails callout.
         if preview.style ~= "bubbles" then
@@ -1129,6 +1350,12 @@ local function config_wizard()
 
         if hasicons and preview.charset == "unicode" and preview.style ~= "bubbles" then
             s = choose_icons(preview, "Icons")
+            if not s or s == "q" then break end
+            if s == "r" then goto continue end
+        end
+
+        if preview.charset == "unicode" then
+            s = choose_animate(preview, "Animated 'Refreshing' Icon")
             if not s or s == "q" then break end
             if s == "r" then goto continue end
         end

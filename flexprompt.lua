@@ -51,8 +51,8 @@ local clink_prompt_spacing = (settings.get("prompt.spacing") ~= nil)
 --------------------------------------------------------------------------------
 -- Color codes.
 
-local realblack = { fg="30", bg="40", extfg="38;5;0", extbg="48;5;0" }
-local realwhite = { fg="37", bg="47", extfg="38;5;7", extbg="48;5;7", altcolor=realblack }
+local realblack = { fg="30", bg="40", extfg="38;5;16", extbg="48;5;16" }
+local realwhite = { fg="37", bg="47", extfg="38;5;250", extbg="48;5;250", altcolor=realblack }
 local nearlywhite = { fg="37", bg="47", extfg="38;5;252", extbg="48;5;252" }
 
 flexprompt.colors =
@@ -90,24 +90,25 @@ flexprompt.colors =
     darkcyan        = { fg="36",    bg="46",    },
     darkwhite       = { fg="37",    bg="47",    },
 
-    -- Real colors.  These use the real color (vs console theme color) when
-    -- extended colors are available.
+    -- Real colors.  When extended colors are available, these use the
+    -- corresponding standard default terminal colors.  Otherwise they use the
+    -- corresponding current terminal color.
     realblack           = realblack,
-    realred             = { fg="31", bg="41",   extfg="38;5;1",     extbg="48;5;1"  },
-    realgreen           = { fg="32", bg="42",   extfg="38;5;2",     extbg="48;5;2"  },
-    realyellow          = { fg="33", bg="43",   extfg="38;5;3",     extbg="48;5;3"  },
-    realblue            = { fg="34", bg="44",   extfg="38;5;4",     extbg="48;5;4"  },
-    realmagenta         = { fg="35", bg="45",   extfg="38;5;5",     extbg="48;5;5"  },
-    realcyan            = { fg="36", bg="46",   extfg="38;5;6",     extbg="48;5;6"  },
+    realred             = { fg="31", bg="41",   extfg="38;2;128;0;0",   extbg="48;2;128;0;0"   },
+    realgreen           = { fg="32", bg="42",   extfg="38;2;0;128;0",   extbg="48;2;0;128;0"   },
+    realyellow          = { fg="33", bg="43",   extfg="38;2;128;128;0", extbg="48;2;128;128;0" },
+    realblue            = { fg="34", bg="44",   extfg="38;2;0;0;128",   extbg="48;2;0;0;128"   },
+    realmagenta         = { fg="35", bg="45",   extfg="38;2;128;0;128", extbg="48;2;128;0;128" },
+    realcyan            = { fg="36", bg="46",   extfg="38;2;0;128;128", extbg="48;2;0;128;128" },
     realwhite           = realwhite,
-    realbrightblack     = { fg="91", bg="101",  extfg="38;5;8",     extbg="48;5;8"  },
-    realbrightred       = { fg="91", bg="101",  extfg="38;5;9",     extbg="48;5;9"  },
-    realbrightgreen     = { fg="92", bg="102",  extfg="38;5;10",    extbg="48;5;10" },
-    realbrightyellow    = { fg="93", bg="103",  extfg="38;5;11",    extbg="48;5;11" },
-    realbrightblue      = { fg="94", bg="104",  extfg="38;5;12",    extbg="48;5;12" },
-    realbrightmagenta   = { fg="95", bg="105",  extfg="38;5;13",    extbg="48;5;13" },
-    realbrightcyan      = { fg="96", bg="106",  extfg="38;5;14",    extbg="48;5;14" },
-    realbrightwhite     = { fg="97", bg="107",  extfg="38;5;15",    extbg="48;5;15" },
+    realbrightblack     = { fg="91", bg="101",  extfg="38;5;244",       extbg="48;5;244" },
+    realbrightred       = { fg="91", bg="101",  extfg="38;5;196",       extbg="48;5;196" },
+    realbrightgreen     = { fg="92", bg="102",  extfg="38;5;46",        extbg="48;5;46"  },
+    realbrightyellow    = { fg="93", bg="103",  extfg="38;5;226",       extbg="48;5;226" },
+    realbrightblue      = { fg="94", bg="104",  extfg="38;5;21",        extbg="48;5;21"  },
+    realbrightmagenta   = { fg="95", bg="105",  extfg="38;5;201",       extbg="48;5;201" },
+    realbrightcyan      = { fg="96", bg="106",  extfg="38;5;51",        extbg="48;5;51"  },
+    realbrightwhite     = { fg="97", bg="107",  extfg="38;5;231",       extbg="48;5;231" },
 
     -- Default text color in rainbow style.
     rainbow_text    = nearlywhite,
@@ -122,6 +123,7 @@ flexprompt.colors =
     vcs_staged      = { fg="95",    bg="105",   extfg="38;5;164",   extbg="48;5;164",   rainbow={ fg="35", bg="45", extfg="38;5;5", extbg="48;5;5", altcolor=realblack } },
     vcs_unpublished = { fg="95",    bg="105",   extfg="38;5;141",   extbg="48;5;141",   rainbow={ fg="35", bg="45", extfg="38;5;99", extbg="48;5;99", altcolor=realblack } },
     vcs_remote      = { fg="96",    bg="106",   extfg="38;5;44",    extbg="48;5;44",    rainbow={ fg="36", bg="46", extfg="38;5;6", extbg="48;5;6", altcolor=realblack } },
+    vcs_stashcount  = { fg="37",    bg="47",    extfg="38;5;248",   extbg="48;5;248",   rainbow={ fg="37", bg="47", extfg="38;5;248", extbg="48;5;248", altcolor=realblack } },
     vcs_unknown     = realwhite,
 
     -- Exit code colors.
@@ -184,6 +186,23 @@ flexprompt.choices.caps =
     round       = { "",    ""     },
     blurred     = { "░▒▓",  "▓▒░"   },
 }
+
+local powerline_open_caps = {}
+local powerline_close_caps = {}
+powerline_open_caps[flexprompt.choices.caps.pointed[1]]     = 1
+powerline_open_caps[flexprompt.choices.caps.slant[1]]       = 1
+powerline_open_caps[flexprompt.choices.caps.backslant[1]]   = 1
+powerline_open_caps[flexprompt.choices.caps.round[1]]       = 1
+powerline_open_caps[flexprompt.choices.caps.blurred[1]]     = 2
+powerline_open_caps[""]                                     = 3
+powerline_open_caps[" "]                                    = 3
+powerline_close_caps[flexprompt.choices.caps.pointed[2]]    = 1
+powerline_close_caps[flexprompt.choices.caps.slant[2]]      = 1
+powerline_close_caps[flexprompt.choices.caps.backslant[2]]  = 1
+powerline_close_caps[flexprompt.choices.caps.round[2]]      = 1
+powerline_close_caps[flexprompt.choices.caps.blurred[2]]    = 2
+powerline_close_caps[""]                                    = 3
+powerline_close_caps[" "]                                   = 3
 
 -- Only if style == classic.
 flexprompt.choices.separators =
@@ -289,13 +308,15 @@ local symbols =
     renamecount     = { "" },   -- Empty string counts renames as modified.
     summarycount    = { "*",    unicode="±" },
     untrackedcount  = { "?" },
+    stashcount      = { "&",    unicode="≡", --[[ nerdfonts2={"", " "}, nerdfonts3={"", " "} ]] },
     aheadbehind     = { "" },   -- Optional symbol preceding ahead/behind counts.
     aheadcount      = { ">>",   unicode="↓" },
     behindcount     = { "<<",   unicode="↑" },
     staged          = { "#",    unicode="↗" },
 
     battery         = { "%" },
-    charging        = { "++",   nerdfonts2={""," "}, nerdfonts3={"󱐋","󱐋 "} },
+    charging        = { "++",   nerdfonts2={""," "}, nerdfonts3={""," "} },
+    smartcharging   = { "%",    unicode="♥" },
 
                                 -- Note: coloremoji for exit_zero requires Clink v1.4.28 or higher.
     exit_zero       = {         coloremoji="✔️", nerdfonts2={"\x1b[92m\002","\x1b[92m \002"}, nerdfonts3={"\x1b[92m\002","\x1b[92m \002"} },
@@ -304,13 +325,13 @@ local symbols =
     prompt          = { ">" },
     overtype_prompt = { ">",    unicode="►" },
 
-    admin           = {         powerline="" },
-    no_admin        = {         nerdfonts2={""," "} },
+    admin           = {         coloremoji=nil--[["🔒"]], powerline="" },
+    no_admin        = {         coloremoji=nil--[["🟢"]], nerdfonts2={""," "}, nerdfonts3={""," "} },
 
-    vpn             = {         coloremoji="☁️", nerdfonts2={"",""}, nerdfonts3="󰖂 " },
+    vpn             = {         coloremoji="☁️", nerdfonts2={"",""}, nerdfonts3=" " },
     no_vpn          = {         coloremoji="🌎", nerdfonts2={""," "}, nerdfonts3={""," "} },
 
-    refresh         = {         nerdfonts2="", nerdfonts3=" " },  --   
+    refresh         = {         nerdfonts2={""," "}, nerdfonts3={""," "} },  --   
 }
 
 if ((clink.version_encoded) or 0) < 10040028 then
@@ -365,15 +386,29 @@ local ansi_to_vga =
 }
 
 local function rgb_from_colortable(num)
-    num = num and ansi_to_vga[num + 1]
-    if not num then
-        return
+    if num ~= 39 and num ~= 49 then
+        num = num and ansi_to_vga[num + 1]
+        if not num then
+            return
+        end
     end
     local colortable = getcolortable()
-    if not colortable or not colortable[num + 1] then
+    if not colortable then
         return
     end
-    local r, g, b = colortable[num + 1]:match("^#(%x%x)(%x%x)(%x%x)$")
+    if num == 39 then
+        num = colortable.foreground
+        -- BUGBUG:  When colortable.default is true, it's a fake placeholder.
+    elseif num == 49 then
+        num = colortable.background
+        -- BUGBUG:  When colortable.default is true, it's a fake placeholder.
+    else
+        num = num + 1
+    end
+    if not colortable[num] then
+        return
+    end
+    local r, g, b = colortable[num]:match("^#(%x%x)(%x%x)(%x%x)$")
     if not r or not g or not b then
         return
     end
@@ -462,7 +497,9 @@ local function rgb_from_color(inner)
         tag = tag - 60
     end
     local fore = (tag >= 30 and tag < 40)
-    tag = math.fmod(tag, 10) + (bold and 8 or 0)
+    if tag ~= 39 and tag ~= 49 then
+        tag = math.fmod(tag, 10) + (bold and 8 or 0)
+    end
     r, g, b = rgb_from_colortable(tag)
     if not r or not g or not b then
         return
@@ -626,7 +663,11 @@ local function get_connector()
 end
 
 local function lookup_color(args)
-    if not args or type(args) == "table" then
+    if not args then
+        return args
+    end
+
+    if type(args) == "table" then
         return args[get_style()] or args
     end
 
@@ -744,6 +785,7 @@ end
 local function get_icon(name)
     if flexprompt.settings.no_graphics or not flexprompt.settings.use_icons then return "" end
     if type(flexprompt.settings.use_icons) == "table" and not flexprompt.settings.use_icons[name] then return "" end
+    if flexprompt.settings.can_animate_refresh and name == "refresh" then return "" end
 
     return get_symbol(name)
 end
@@ -830,30 +872,6 @@ local function connect(lhs, rhs, frame, sgr_frame_color)
         lhs = lhs .. sgr_frame_color .. string.rep(get_connector(), gap)
     end
     return lhs..rhs..frame, dropped
-end
-
-local _refilter_modules
-local _module_results = {}
-local function refilter_module(module)
-    _refilter_modules = _refilter_modules or {}
-    _refilter_modules[module] = true
-end
-
-local function reset_render_state(keep_results)
-    _can_use_extended_colors = nil
-    _charset = nil
-    _nerdfonts_version = nil
-    _nerdfonts_width = nil
-    _wizard = nil
-    _refilter_modules = nil
-    if not keep_results then
-        _module_results = {}
-    end
-end
-
-local list_on_reset_render_state = {}
-local function add_on_reset_render_state(func)
-    table.insert(list_on_reset_render_state, func)
 end
 
 --------------------------------------------------------------------------------
@@ -1122,42 +1140,6 @@ if clink.onaftercommand then
 end
 
 --------------------------------------------------------------------------------
--- Helpers for duration, exit code, and time.
-
-local duration_modules
-local endedit_time
-local last_duration
-local last_time
-
--- Clink v1.2.30 has a fix for Lua's os.clock() implementation failing after the
--- program has been running more than 24 days.  Without that fix, os.time() must
--- be used instead, but the resulting duration can be off by up to +/- 1 second.
-local duration_clock = ((clink.version_encoded or 0) >= 10020030) and os.clock or os.time
-
-local function duration_onbeginedit()
-    last_duration = nil
-    duration_modules = nil
-    flexprompt.settings.force_duration = nil
-    if endedit_time then
-        local beginedit_time = duration_clock()
-        local elapsed = beginedit_time - endedit_time
-        if elapsed >= 0 then
-            last_duration = elapsed
-        end
-    end
-end
-
-local function duration_onendedit()
-    endedit_time = duration_clock()
-end
-
-local function time_onbeginedit()
-    last_time = nil
-end
-
-add_on_reset_render_state(time_onbeginedit)
-
---------------------------------------------------------------------------------
 -- Segments.
 
 local segmenter = nil
@@ -1314,45 +1296,165 @@ local function init_segmenter(side, frame_color)
     segmenter.altseparator = resolve_separator(altseparators, altsep_index)
 end
 
-local function color_segment_transition(color, symbol, close)
+local function is_powerline_cap(symbol)
+    if type(symbol) == "table" then
+        return powerline_open_caps[symbol[1]] or powerline_close_caps[symbol[2]]
+    else
+        return powerline_open_caps[symbol] or powerline_close_caps[symbol]
+    end
+end
+
+local function get_fade_target_color()
+    local target = flexprompt.settings.fade_target
+    local color = (target == "light") and "48;5;255" or nil
+    if not color and type(target) == "string" and not target:find("[^0-9;]") then
+        color = target
+    end
+    return color or "48;5;232"
+end
+
+local function color_segment_transition(color, symbol, close, do_fade, breaking)
     if not symbol or symbol == "" then
-        return ""
+        if not do_fade then
+            return ""
+        end
     end
 
     local swap
-    if segmenter.style == "classic" then
+    local classic = segmenter.style == "classic"
+    local rainbow = segmenter.style == "rainbow"
+    if classic then
         swap = close
-    elseif segmenter.style == "rainbow" then
+    elseif rainbow then
         swap = not close
-        if not segmenter.open_cap and not close and segmenter.side == 0 then
+        if not segmenter.open_cap and not close and
+                ((segmenter.side == 0 and not breaking) or
+                 (segmenter.side == 1 and breaking)) then
             swap = false
         end
     end
 
     local primary = swap and color or segmenter.back_color
     local secondary = swap and segmenter.back_color or color
-
     local out
-    if segmenter.style == "rainbow" then
-        if get_best_bg(segmenter.back_color) == get_best_bg(color) and segmenter.altseparator then
-            out = sgr(get_best_fg(segmenter.frame_color[fc_sep])) .. segmenter.altseparator
-        elseif not symbol:find("^\x1b") then
-            if primary == flexprompt.colors.default then
-                out = sgr(get_best_bg(primary) .. ";" .. get_best_fg(secondary) .. ";7") .. symbol .. sgr("27")
+
+    if do_fade then
+        if flexprompt.settings[do_fade] then
+            local captype = is_powerline_cap(symbol)
+            if captype then
+                local pri_bg, pri_bg_raw
+                local sec_bg, sec_bg_raw
+                pri_bg_raw = get_best_bg(primary)
+                sec_bg_raw = get_best_bg(secondary)
+                if primary.bg == "49" then
+                    pri_bg = get_fade_target_color()
+                else
+                    pri_bg = pri_bg_raw
+                end
+                if secondary.bg == "49" then
+                    sec_bg = get_fade_target_color()
+                else
+                    sec_bg = sec_bg_raw
+                end
+                if rainbow and not (do_fade == "fade_sep" and ((not breaking) ~= (segmenter.side == 1))) then
+                    local tmp
+                    tmp = pri_bg
+                    pri_bg = sec_bg
+                    sec_bg = tmp
+                    tmp = pri_bg_raw
+                    pri_bg_raw = sec_bg_raw
+                    sec_bg_raw = tmp
+                end
+                if captype >= 2 then
+                    -- 2 is the "blurred" cap style; 3 is a flat cap style.  Use a
+                    -- series of spaces with a gradient of background colors.
+                    local width = math.max(flexprompt.settings.fade_width or 3, 1)
+                    local slice = 1 / (width + 1)
+                    out = ""
+                    if not close or (rainbow and do_fade == "fade_sep") then
+                        for i = 1, width do
+                            out = out .. sgr("0;" .. flexprompt.blend_color(pri_bg, sec_bg, 1 - (i * slice))) .. " "
+                        end
+                    else
+                        for i = width, 1, -1 do
+                            out = out .. sgr("0;" .. flexprompt.blend_color(pri_bg, sec_bg, 1 - (i * slice))) .. " "
+                        end
+                    end
+                elseif captype == 1 then
+                    -- One of the powerline cap styles.  Use the cap character
+                    -- with a gradient of color transitions.
+                    local width = math.max(flexprompt.settings.fade_width or 3, 1)
+                    local slice = 1 / (width + 1)
+                    out = ""
+                    if rainbow and do_fade == "fade_sep" and ((segmenter.side == 0) == (not breaking)) then
+                        -- Fade for rainbow separators in the left side.
+                        local prev_fg = pri_bg
+                        local lo, hi = 1, width + 1
+                        for i = lo, hi do
+                            local next_bg = flexprompt.blend_color(pri_bg, sec_bg, 1 - (i * slice))
+                            local next_bg_raw = ((i == lo and pri_bg_raw == "49" and pri_bg_raw) or
+                                                 (i == hi and sec_bg_raw) or
+                                                 next_bg)
+                            prev_fg = prev_fg:gsub("^4", "3")
+                            out = out .. sgr("0;" .. prev_fg .. ";" .. next_bg_raw) .. symbol
+                            prev_fg = next_bg
+                        end
+                    elseif not close and not (breaking and segmenter.side == 1) then
+                        -- Fade for the left end of a series of segments, or for
+                        -- rainbow separators in the right side.
+                        local prev_bg = pri_bg
+                        local lo, hi = 1, width + 1
+                        for i = lo, hi do
+                            local next_bg = flexprompt.blend_color(pri_bg, sec_bg, 1 - (i * slice))
+                            local next_bg_raw = (i == hi) and sec_bg_raw or next_bg
+                            local next_fg = next_bg_raw:gsub("^4", "3")
+                            prev_bg = ((i == lo and pri_bg_raw == "49" and pri_bg_raw) or
+                                       ((i == hi or breaking) and sec_bg_raw == "49" and sec_bg_raw) or
+                                       prev_bg)
+                            out = out .. sgr("0;" .. prev_bg .. ";" .. next_fg) .. symbol
+                            prev_bg = next_bg
+                        end
+                    else
+                        -- Fade for the right end of a series of segments.
+                        local prev_fg = sec_bg
+                        local hi, lo = width, 0
+                        for i = hi, lo, -1 do
+                            local next_bg = flexprompt.blend_color(pri_bg, sec_bg, 1 - (i * slice))
+                            local next_bg_raw = ((i == hi and sec_bg_raw == "49" and sec_bg_raw) or
+                                                 (i == lo and pri_bg_raw) or
+                                                 next_bg)
+                            prev_fg = prev_fg:gsub("^4", "3")
+                            out = out .. sgr("0;" .. prev_fg .. ";" .. next_bg_raw) .. symbol
+                            prev_fg = next_bg
+                        end
+                    end
+                end
             end
         end
     end
 
     if not out then
-        if segmenter.style == "rainbow" then
-            out = sgr(get_best_fg(primary) .. ";" .. get_best_bg(secondary)) .. symbol
-        else
-            out = sgr(get_best_bg(primary) .. ";" .. get_best_fg(secondary)) .. symbol
+        if rainbow then
+            if get_best_bg(segmenter.back_color) == get_best_bg(color) and segmenter.altseparator then
+                out = sgr(get_best_fg(segmenter.frame_color[fc_sep])) .. segmenter.altseparator
+            elseif not symbol:find("^\x1b") then
+                if primary == flexprompt.colors.default then
+                    out = sgr(get_best_bg(primary) .. ";" .. get_best_fg(secondary) .. ";7") .. symbol .. sgr("27")
+                end
+            end
+        end
+
+        if not out then
+            if rainbow then
+                out = sgr(get_best_fg(primary) .. ";" .. get_best_bg(secondary)) .. symbol
+            else
+                out = sgr(get_best_bg(primary) .. ";" .. get_best_fg(secondary)) .. symbol
+            end
         end
     end
 
     if flexprompt.debug_logging then
-        log.info(string.format('transition "%s", close %d, side %d, ', out, close, segmenter.side))
+        log.info(string.format('transition "%s", close %d, side %d', out, close, segmenter.side))
     end
     return out
 end
@@ -1380,8 +1482,26 @@ local function next_segment(text, color, rainbow_text_color, isbreak, pending_se
     local classic = segmenter.style == "classic"
     local rainbow = segmenter.style == "rainbow"
 
-    if segmenter.open_cap then
-        sep = segmenter.open_cap
+    local opening = segmenter.open_cap
+    local closing = not text
+    local breaking = ((segmenter.side == 0 and wasbreak) or (segmenter.side == 1 and isbreak))
+    if opening or closing or breaking then
+        if opening then
+            sep = segmenter.open_cap
+        elseif closing then
+            sep = segmenter.close_cap
+        else
+            local charset = get_charset()
+            local available_caps = (charset == "ascii") and flexprompt.choices.ascii_caps or flexprompt.choices.caps
+            local cap = available_caps[flexprompt.settings.separators]
+            if cap then
+                local which = 2 - segmenter.side
+                if breaking then
+                    which = 3 - which
+                end
+                sep = cap[which]
+            end
+        end
         if not rainbow then
             transition_color = segmenter.frame_color[fc_back]
             back = get_best_bg(segmenter.frame_color[fc_back])
@@ -1404,17 +1524,6 @@ local function next_segment(text, color, rainbow_text_color, isbreak, pending_se
         segmenter.override_style = nil
     end
 
-    local pad = (segmenter.style == "lean" -- Lean has no padding.
-                 or text == "") -- Segment with empty string has no padding.
-                 and "" or " "
-
-    if not text then
-        if segmenter.style ~= "lean" and not segmenter.open_cap then
-            out = out .. color_segment_transition(color, segmenter.close_cap, true)
-        end
-        return out
-    end
-
     local override_back_color
     if classic and text == "" then
         local charset = get_charset()
@@ -1431,22 +1540,70 @@ local function next_segment(text, color, rainbow_text_color, isbreak, pending_se
         end
     end
 
+    local do_fade
+    if closing then
+        if breaking then
+            if flexprompt.settings.fade_sep then
+                do_fade = "fade_sep"
+            end
+        elseif segmenter.side == 0 then
+            if flexprompt.settings.fade_head then
+                do_fade = "fade_head"
+            end
+        elseif segmenter.side == 1 then
+            if flexprompt.settings.fade_tail then
+                do_fade = "fade_tail"
+            end
+        end
+    elseif opening then
+        if segmenter.side == 0 then
+            if flexprompt.settings.fade_tail then
+                do_fade = "fade_tail"
+            end
+        elseif segmenter.side == 1 then
+            if flexprompt.settings.fade_head then
+                do_fade = "fade_head"
+            end
+        end
+    else
+        if rainbow and flexprompt.settings.fade_sep then
+            do_fade = "fade_sep"
+        end
+    end
+    if do_fade then
+        do_fade = is_powerline_cap(sep) and do_fade
+    end
+
+    local pad = (segmenter.style == "lean" -- Lean has no padding.
+                 or text == "") -- Segment with empty string has no padding.
+                 and "" or " "
+
+    if closing then
+        if segmenter.style ~= "lean" and not opening then
+            out = out .. color_segment_transition(color, segmenter.close_cap, true, do_fade)
+        end
+        return out
+    end
+
+    -- breaking = do_fade and breaking
     if override_style then
         local restore_style = segmenter.style
         segmenter.style = override_style
-        out = out .. color_segment_transition(transition_color, sep)
+        out = out .. color_segment_transition(transition_color, sep, false, do_fade, breaking)
         segmenter.style = restore_style
     else
-        out = out .. color_segment_transition(transition_color, sep)
+        out = out .. color_segment_transition(transition_color, sep, false, do_fade, breaking)
     end
     if fore then
         out = out .. sgr(back .. ";" .. fore)
     end
 
     -- A module with an empty string is a segment break.  When there's no
-    -- separator, force a break by showing one connector character using the
-    -- frame color.
-    if text == "" and sep:gsub(" ", "") == "" then
+    -- separator or a blurred separator, force a break by showing one
+    -- connector character using the frame color.
+    if text == "" and sep and (sep:gsub(" ", "") == "" or
+            (sep == flexprompt.choices.caps.blurred[1] or
+             sep == flexprompt.choices.caps.blurred[2])) then
         local connector = get_connector()
         text = make_fluent_text(sgr(flexprompt.colors.default.bg .. ";" .. get_best_fg(segmenter.frame_color[fc_frame])) .. connector)
     end
@@ -1469,7 +1626,7 @@ local function next_segment(text, color, rainbow_text_color, isbreak, pending_se
 
     -- Add leading pad character.  Except in classic style if two segments are
     -- immediately adjacent; in that case it would look like double-padding.
-    if pad ~= "" and not (classic and not wasbreak and (sep == "" or sep == " ") and not segmenter.open_cap) then
+    if pad ~= "" and not (classic and not wasbreak and (sep == "" or sep == " ") and not opening) then
         out = out .. pad
     end
 
@@ -1500,7 +1657,71 @@ local function promptcoroutine_manager()
         for _,entry in pairs(_cached_state.coroutines) do
             entry.func(true--[[async]])
         end
+        flexprompt.refilter_module(nil) -- nil forces refiltering all modules.
     end
+end
+
+local refilter_if_refresh_icon -- forward declaration.
+
+local _last_clock
+local _last_index
+local _animation_lists = {
+    ascii    = { "/", "-", "\\" },
+    unicode  = { "⠇", "⠋", "⠙", "⠸", "⠴", "⠦" }, -- Braille letters.
+    --firacode = { "", "", "", "", "", "" }, -- Fira Code progress circle.
+}
+local _animation_intervals = {
+    initial  = 0.1,
+    backoff  = nil,     -- nil applies delta each time.
+    delta    = 0.001,
+    max      = 0.5,
+    current  = nil,
+}
+local _animating
+local _animation_coroutine
+
+local function animate_refreshing_icons()
+    _animating = true
+    local started = os.clock()
+    local interval = _animation_intervals.current
+    while refilter_if_refresh_icon() do
+        clink.refilterprompt()
+        coroutine.yield()
+        if _animation_coroutine ~= coroutine.running() then
+            -- A different animation coroutine is active, so abandon this one.
+            -- Don't clear _animating because it's already been updated.
+            return
+        end
+        local elapsed = os.clock() - started
+        if elapsed >= (_animation_intervals.backoff or interval) then
+            interval = interval + _animation_intervals.delta
+            if interval <= _animation_intervals.max then
+                _animation_intervals.current = interval
+                clink.setcoroutineinterval(coroutine.running(), interval)
+                started = os.clock()
+            end
+        end
+    end
+    _animating = nil
+    _animation_intervals.current = nil
+end
+
+local function get_refreshing_animated_icon()
+    local now = os.clock()
+    local list = _animation_lists[flexprompt.get_charset() or "ascii"]
+    if not _last_clock or now - _last_clock >= _animation_intervals.current then
+        _last_clock = now
+        if _last_index then
+            _last_index = (_last_index + 1) % #list
+        else
+            _last_index = 0
+        end
+    end
+    return list[_last_index + 1]
+end
+
+local function get_refreshing_icon_animation_list()
+    return _animation_lists[flexprompt.get_charset() or "ascii"]
 end
 
 local function promptcoroutine(func)
@@ -1524,7 +1745,10 @@ local function promptcoroutine(func)
         if async then
             -- Create the prompt coroutine manager if needed.
             if not _cached_state.has_promptcoroutine then
-                clink.promptcoroutine(promptcoroutine_manager)
+                -- Passing "flexprompt" for the cookie (new in Clink v1.7.0)
+                -- enables other *.clinkprompt files to use flexprompt's
+                -- modules directly without any special integration code.
+                clink.promptcoroutine(promptcoroutine_manager, "flexprompt")
                 _cached_state.has_promptcoroutine = true
             end
         else
@@ -1535,9 +1759,10 @@ local function promptcoroutine(func)
                 entry.func(false--[[async]])
             end)
 
-            -- Run the coroutine synchronously.
-            local max_iter = 25
-            for iteration = 1, max_iter + 1, 1 do
+            -- Run the coroutine synchronously.  Cap the duration when running
+            -- synchronously, in case it's poorly behaved.
+            local began = os.clock()
+            while true do
                 -- Pass false to let it know it is not async.
                 local result, _ = coroutine.resume(c)
                 if result then
@@ -1550,12 +1775,10 @@ local function promptcoroutine(func)
                     end
                     break
                 end
-                -- Cap iterations when running synchronously, in case it's
-                -- poorly behaved.
-                if iteration >= max_iter then
-                    -- Ideally this could print an error message about
-                    -- abandoning a misbehaving coroutine, but that would mess
-                    -- up the prompt and input line display.
+                -- Ideally this could print an error message when abandoning a
+                -- misbehaving coroutine, but that would mess up the prompt and
+                -- input line display.
+                if os.clock() - began > 10 then
                     break
                 end
             end
@@ -1585,6 +1808,63 @@ local function log_cost(tick, module)
     _module_costs[module] = cost
 end
 
+local _refilter_modules
+local function refilter_module(module)
+    if module then
+        _refilter_modules = _refilter_modules or {}
+        _refilter_modules[module] = true
+    else
+        _refilter_modules = nil
+    end
+end
+
+local _module_results = {}
+refilter_if_refresh_icon = function()
+    local replace = flexprompt.get_icon("refresh")
+    if replace and replace ~= "" then
+        local any
+        for module, results in pairs(_module_results) do
+            for _, segment in ipairs(results) do
+                if segment.text and segment.text:find(replace, 1, true--[[plain]]) then
+                    flexprompt.refilter_module(module)
+                    any = true
+                end
+            end
+        end
+        return any
+    end
+end
+
+local function dont_refilter_module(module)
+    if _refilter_modules and not _refilter_modules[module] then
+        return true
+    end
+end
+
+local list_on_reset_render_state = {}
+local function add_on_reset_render_state(func)
+    table.insert(list_on_reset_render_state, func)
+end
+
+local function reset_render_state(full)
+    _can_use_extended_colors = nil
+    _charset = nil
+    _nerdfonts_version = nil
+    _nerdfonts_width = nil
+    _wizard = nil
+
+    if full then
+        for _, func in ipairs(list_on_reset_render_state) do
+            func()
+        end
+        _animating = nil
+        _animation_intervals.current = nil
+        _animation_coroutine = nil
+        _refilter_modules = nil
+        _module_results = {}
+    end
+end
+
 local function normalize_segment_table(t)
     if t[1] then
         return { text=t[1], color=t[2], altcolor=t[3], isbreak=t.isbreak, condense_callback=t.condense_callback }
@@ -1592,6 +1872,8 @@ local function normalize_segment_table(t)
         return t
     end
 end
+
+local _debug_refiltered
 
 local function render_module(name, args, try_condense)
     local key = string.lower(name)
@@ -1620,10 +1902,12 @@ local function render_module(name, args, try_condense)
         return results
     end
 
-    if _refilter_modules and not _refilter_modules[key] then
-        if results then
-            return results
-        end
+    if results and dont_refilter_module(key) then
+        return results
+    end
+
+    if _debug_refiltered then
+        table.insert(_debug_refiltered, key)
     end
 
     local func = modules[key]
@@ -1632,7 +1916,7 @@ local function render_module(name, args, try_condense)
         local a, b, c = func(args)
         log_cost(tick, key)
         if a == nil then
-            results = nil
+            results = {}
         elseif type(a) ~= "table" then
             -- Not a table means func() returned up to 3 strings.
             results = { { text=a, color=b, altcolor=c } }
@@ -1650,11 +1934,11 @@ local function render_module(name, args, try_condense)
             for _, t in ipairs(a) do
                 table.insert(results, normalize_segment_table(t))
             end
-            if #results == 0 then
-                results = nil
-            end
         end
         _module_results[key] = results
+        if #results == 0 then
+            results = nil
+        end
         return results
     end
 end
@@ -1766,17 +2050,35 @@ local function render_modules(prompt, side, frame_color, condense, anchors)
         log.info('END render_modules')
     end
 
+    if flexprompt.settings.can_animate_refresh then
+        local replace = flexprompt.get_icon("refresh")
+        if replace and replace ~= "" then
+            if not _animating and out:find(replace, 1, true--[[plain]]) then
+                _animating = true
+                _animation_coroutine = coroutine.create(animate_refreshing_icons)
+                _last_clock = nil
+                _last_index = nil
+                _animation_intervals.current = _animation_intervals.initial
+                clink.setcoroutineinterval(_animation_coroutine, _animation_intervals.current)
+            end
+            if _animating then
+                local with = get_refreshing_animated_icon()
+                out = out:gsub(replace, with)
+            end
+        end
+    end
+
     return out, any_condense_callbacks
 end
 
 local function render_prompts(render_settings, need_anchors, condense)
-    reset_render_state(condense)
+    reset_render_state()
 
     local old_settings = flexprompt.settings
     if render_settings then
         flexprompt.settings = render_settings
         if render_settings.wizard then
-            reset_render_state(condense)
+            reset_render_state()
             _wizard = render_settings.wizard
             local screenwidth = _wizard.screenwidth or console.getwidth()
             _wizard.width = _wizard.width or (screenwidth - 8)
@@ -1817,6 +2119,11 @@ local function render_prompts(render_settings, need_anchors, condense)
 
     -- Padding around left/right segments for lean style.
     local pad_frame = (style == "lean") and " " or ""
+
+    _debug_refiltered = nil
+    if os.getenv("FLEXPROMPT_DEBUG_REFILTER") then
+        _debug_refiltered = {}
+    end
 
     -- Top -------------------------------------------------------------------
 
@@ -1963,18 +2270,38 @@ local function render_prompts(render_settings, need_anchors, condense)
     if try_condense and can_condense and not condense then
         prompt, rprompt, anchors = render_prompts(render_settings, need_anchors, true--[[condense]])
     end
+
+    if not condense then
+        _refilter_modules = nil
+    end
+
+    if _debug_refiltered then
+        local msg
+        for _, m in ipairs(_debug_refiltered) do
+            if msg then
+                msg = msg .. ", "
+            else
+                msg = "REFILTERED: "
+            end
+            msg = msg .. m
+        end
+        clink.print("\x1b[s\x1b[H\x1b[0;41;97m" .. (msg or "") .. "\x1b[K\x1b[m\x1b[u", NONL)
+        _debug_refiltered = nil
+    end
+
     return prompt, rprompt, anchors
 end
 
 local function render_transient_prompt(wizard)
     local s
     _wizard = wizard
-    s = get_prompt_symbol_color() .. get_transient_prompt_symbol() .. sgr() .. " "
+    s = sgr() .. get_prompt_symbol_color() .. get_transient_prompt_symbol() .. sgr() .. " "
     _wizard = nil
     return s
 end
 
 function flexprompt.render_wizard(settings, need_anchors)
+    reset_render_state(true--[[full]])
     local left, right, anchors = render_prompts(settings, need_anchors)
     local col
     if not right or right == "" then
@@ -2006,37 +2333,68 @@ if CMDER_SESSION then
     prompt_includeVersionControl = false
 end
 
+local disable
+local function detect_disable()
+    disable = nil
+    if clink.getclinkprompt then
+        local name, _, _, dependson = clink.getclinkprompt()
+        disable = (name and name ~= "" and not dependson["flexprompt"])
+    end
+end
+
 local right
 
 function pf:filter(prompt) -- luacheck: no unused
+    detect_disable()
+    if disable then
+        return
+    end
     prompt, right = render_prompts()
+    if prompt then
+        prompt = sgr()..prompt
+    end
+    if right and #right > 0 then
+        right = sgr()..right
+    end
     return prompt
 end
 
 function pf:rightfilter(prompt) -- luacheck: no unused
+    if disable then
+        return
+    end
     return right or "", continue_filtering
 end
 
 function pf:transientfilter(prompt) -- luacheck: no unused
+    detect_disable()
+    if disable then
+        return
+    end
     return render_transient_prompt()
 end
 
 function pf:transientrightfilter(prompt) -- luacheck: no unused
+    if disable then
+        return
+    end
     return "", continue_filtering
 end
 
 -- Capture the $+ dir stack depth if present at the beginning of PROMPT.
-local plus_capture = clink.promptfilter(1)
-function plus_capture:filter(prompt) -- luacheck: no unused
-    local plusBegin, plusEnd = prompt:find("^[+]+")
-    if plusBegin == nil then
-        plusBegin, plusEnd = prompt:find("[\n][+]+")
-        if plusBegin then
-            plusBegin = plusBegin + 1
+if not os.getpushddepth then
+    local plus_capture = clink.promptfilter(1)
+    function plus_capture:filter(prompt) -- luacheck: no unused
+        local plusBegin, plusEnd = prompt:find("^[+]+")
+        if plusBegin == nil then
+            plusBegin, plusEnd = prompt:find("[\n][+]+")
+            if plusBegin then
+                plusBegin = plusBegin + 1
+            end
         end
-    end
-    if plusBegin ~= nil then
-        _cached_state.dirStackDepth = prompt:sub(plusBegin, plusEnd)
+        if plusBegin ~= nil then
+            _cached_state.dirStackDepth = prompt:sub(plusBegin, plusEnd)
+        end
     end
 end
 
@@ -2070,6 +2428,42 @@ local function spacing_onbeginedit()
 end
 
 --------------------------------------------------------------------------------
+-- Helpers for duration, exit code, and time.
+
+local duration_modules
+local endedit_time
+local last_duration
+local last_time
+
+-- Clink v1.2.30 has a fix for Lua's os.clock() implementation failing after the
+-- program has been running more than 24 days.  Without that fix, os.time() must
+-- be used instead, but the resulting duration can be off by up to +/- 1 second.
+local duration_clock = ((clink.version_encoded or 0) >= 10020030) and os.clock or os.time
+
+local function duration_onbeginedit()
+    last_duration = nil
+    duration_modules = nil
+    flexprompt.settings.force_duration = nil
+    if endedit_time then
+        local beginedit_time = duration_clock()
+        local elapsed = beginedit_time - endedit_time
+        if elapsed >= 0 then
+            last_duration = elapsed
+        end
+    end
+end
+
+local function duration_onendedit()
+    endedit_time = duration_clock()
+end
+
+local function time_onbeginedit()
+    last_time = nil
+end
+
+add_on_reset_render_state(time_onbeginedit)
+
+--------------------------------------------------------------------------------
 -- Public API.
 
 -- Add a module.
@@ -2078,6 +2472,9 @@ end
 -- The prompt text "{xyz:args}" would call xyz_render("args").
 -- The symbol is optional, and is the default symbol for the module.
 function flexprompt.add_module(name, func, symbol)
+    if name:find("[^%w]") then
+        error("invalid flexprompt module name '"..name.."'; module names may only contain alphabetic characters.")
+    end
     modules[string.lower(name)] = func
     symbols[name .. "_module"] = symbol
 end
@@ -2143,6 +2540,9 @@ flexprompt.get_frame = get_frame
 
 -- Function to get the prompt style.
 flexprompt.get_style = get_style
+
+-- Function to get the prompt charset.
+flexprompt.get_charset = get_charset
 
 -- Function to get the prompt line count.
 flexprompt.get_lines = get_lines
@@ -2341,6 +2741,9 @@ flexprompt.abbrev_path = abbrev_path
 -- (without appending them).
 flexprompt.append_text = append_text
 
+-- Function that returns whether an end cap style supports 24-bit color fading.
+flexprompt.is_powerline_cap = is_powerline_cap
+
 -- Function that returns whether the prompt settings include the name module.
 -- Returns 1 if in left, 2 if in right, or 3 if in both.
 flexprompt.is_module_in_prompt = is_module_in_prompt
@@ -2355,10 +2758,7 @@ flexprompt.refilter_module = refilter_module
 -- Function that resets all rendering state and forces rerunning all prompt
 -- modules the next time the prompt is filtered.
 function flexprompt.reset_render_state()
-    reset_render_state()
-    for _, func in ipairs(list_on_reset_render_state) do
-        func()
-    end
+    reset_render_state(true--[[full]])
 end
 
 function flexprompt.on_reset_render_state(func)
@@ -2387,16 +2787,25 @@ function flexprompt.get_module_symbol(refreshing)
     if refreshing and s ~= "" then
         local ref_sym = flexprompt.get_icon("refresh")
         if ref_sym and ref_sym ~= "" then
-            s = ref_sym
+            local s_cells = console.cellcount(s)
+            local r_cells = console.cellcount(ref_sym)
+            local padding = (s_cells > r_cells) and string.rep(" ", s_cells - r_cells) or ""
+            s = ref_sym .. padding
         end
     end
     return s or ""
 end
 
+flexprompt.get_refreshing_icon_animation_list = get_refreshing_icon_animation_list
+
 -- Function to retrieve a string of "+" corresponding to the pushd stack depth
 -- if %PROMPT% begins with "$+".
 function flexprompt.get_dir_stack_depth()
-    return _cached_state.dirStackDepth or ""
+    if os.getpushddepth then
+        return string.rep("+", os.getpushddepth())
+    else
+        return _cached_state.dirStackDepth or ""
+    end
 end
 
 -- Function that takes (dir, subdir) and returns "dir\subdir" if the subdir
@@ -2543,6 +2952,23 @@ function flexprompt.set_scm_color(scm_type, color)
     flexprompt.settings.scm_colors = flexprompt.settings.scm_colors or {}
     flexprompt.settings.scm_colors[scm_type:lower()] = color
 end
+
+-- Function to ask a module to render its content.
+flexprompt.render_module = function(name, args, try_condense)
+    local old_segmenter = segmenter
+    segmenter = {}
+    segmenter._current_module = name
+
+    local results = render_module(name, args, try_condense)
+
+    segmenter._current_module = nil
+    segmenter = old_segmenter
+    return results
+end
+
+-- Functions to translate flexprompt bg and fg colors.
+flexprompt.get_best_bg = get_best_bg
+flexprompt.get_best_fg = get_best_fg
 
 -- Function to register a module's prompt coroutine.
 -- IMPORTANT:  Use this instead of clink.promptcoroutine()!
@@ -3106,7 +3532,7 @@ local function onbeginedit()
 
     _cached_state = {}
 
-    reset_render_state()
+    reset_render_state(true--[[full]])
 
     duration_onbeginedit()
     time_onbeginedit()
@@ -3115,7 +3541,7 @@ local function onbeginedit()
 
     insertmode_onbeginedit()
 
-    if not offered_wizard then
+    if not offered_wizard and (not clink.getclinkprompt or clink.getclinkprompt() == "") then
         local settings = flexprompt.settings or {}
         if not settings.top_prompt and not settings.left_prompt and not settings.right_prompt then
             clink.print("\n" .. sgr(1) .. "Flexprompt has not yet been configured." .. sgr())
@@ -3129,9 +3555,10 @@ local function onendedit()
     duration_onendedit()
 end
 
-local function oncommand(line_state, info) -- luacheck: no unused
+local function oncommand(_, info)
     if flexprompt.settings.oncommands then
         _cached_state.command = path.getbasename(info.command):lower()
+        flexprompt.refilter_module(nil) -- nil forces refiltering all modules.
         clink.refilterprompt()
     end
 end

@@ -1,3 +1,28 @@
+--------------------------------------------------------------------------------
+-- LBUBBLE MODULE:  {lbubble:darker:icons:levelicon:nostashes}
+--  - 'darker' uses darker gray colors (compensate for monitor gamma).
+--  - 'icons' shows icon for current directory segment.
+--  - 'levelicon' shows icons for battery level.
+--  - 'nostashes' omits the count of stashes.
+--
+--------------------------------------------------------------------------------
+-- RBUBBLE MODULE:  {rbubble:darker:icons:colons:hex:format=format_string}
+--  - 'darker' uses darker gray colors (compensate for monitor gamma).
+--  - 'icons' shows icon for current directory segment.
+--  - 'colons' shows colons in the duration segment.
+--  - 'hex' shows exit code in hexadecimal for any value greater than 255.
+--  - 'format=format_string' specify format string for date/time segment.
+--
+-- If present, the 'format=' option must be last (otherwise it could never
+-- include colons).
+--
+--------------------------------------------------------------------------------
+-- TBUBBLE MODULE:  {tubble}
+--
+-- There are no options for the TBUBBLE module.
+--
+--------------------------------------------------------------------------------
+
 -- luacheck: globals flexprompt flexprompt_git flexprompt_bubbles
 if not flexprompt or not flexprompt.add_module then
     log.info("flexprompt_bubbles requires flexprompt.")
@@ -25,43 +50,66 @@ flexprompt.settings.symbols.detached = { nerdfonts2={"ﰖ", " "}, nerdfonts3=
 
 local default_bg_as_fg = "30" -- REVIEW: Is this really needed?
 
-local bg_default = sgr("49")
-local bg_softblue = sgr("48;2;60;90;180")
-local bg_softmagenta = sgr("48;2;100;60;160")
-local bg_softgreen = sgr("48;2;60;120;90")
-local bg_red = sgr("48;5;88")
-local bg_gray1 = sgr("48;5;240")
-local bg_gray2 = sgr("48;5;238")
-local bg_gray3 = sgr("48;5;236")
-local bg_darkgray1 = sgr("48;5;238")
-local bg_darkgray2 = sgr("48;5;236")
-local bg_darkgray3 = sgr("48;5;234")
-
-local bg_git_default = sgr("48;2;0;120;240")
-local bg_nongit_default = sgr("48;2;125;95;225")
-
-local fg_default = sgr("39")
-local fg_black = sgr("30")
-local fg_red = sgr("38;5;202")
-local fg_orange = sgr("38;5;208")
-local fg_yellow = sgr("38;5;220")
-local fg_green = sgr("38;5;40")
-local fg_cyan = sgr("38;5;45")
-local fg_magenta = sgr("38;5;171")
-local fg_lavender = sgr("38;5;99")
-local fg_white = sgr("38;5;255")
-
-local fg_green_prompt_char = sgr("92")
-local fg_red_prompt_char = sgr("91")
-local fg_vpn = sgr("38;5;117")
-local fg_muted = sgr("38;5;248")
-local fg_fluent = fg_black
-
-local fg_histlabel = "38;5;169"
-local bg_blendmute = "48;2;0;0;0"
-
 flexprompt_bubbles = flexprompt_bubbles or {}
 flexprompt_bubbles.vpn_colors = flexprompt_bubbles.vpn_colors or {}
+flexprompt_bubbles.bubble_colors = {
+    bg_default = sgr("49"),
+    bg_softblue = sgr("48;2;60;90;180"),
+    bg_softmagenta = sgr("48;2;100;60;160"),
+    bg_softgreen = sgr("48;2;60;120;90"),
+    bg_red = sgr("48;5;88"),
+    bg_gray1 = sgr("48;5;240"),
+    bg_gray2 = sgr("48;5;238"),
+    bg_gray3 = sgr("48;5;236"),
+    bg_darkgray1 = sgr("48;5;238"),
+    bg_darkgray2 = sgr("48;5;236"),
+    bg_darkgray3 = sgr("48;5;234"),
+
+    bg_git_default = sgr("48;2;0;120;240"),
+    bg_nongit_default = sgr("48;2;125;95;225"),
+
+    fg_default = sgr("39"),
+    fg_black = sgr("30"),
+    fg_red = sgr("38;5;202"),
+    fg_orange = sgr("38;5;208"),
+    fg_yellow = sgr("38;5;220"),
+    fg_green = sgr("38;5;34"),
+    fg_cyan = sgr("38;5;45"),
+    fg_magenta = sgr("38;5;171"),
+    fg_lavender = sgr("38;2;160;130;255"),
+    fg_white = sgr("38;5;255"),
+
+    fg_green_prompt_char = sgr("92"),
+    fg_red_prompt_char = sgr("91"),
+    fg_muted = sgr("38;5;248"),
+    fg_fluent = sgr("30"),
+    bg_blendmute = "48;2;0;0;0",
+
+    fg_histlabel = "38;5;169",
+    fg_vpn = "38;5;117",
+
+    sgr = sgr,
+}
+
+-- Certain purposes can have custom colors defined in
+-- flexprompt_bubbles.bubble_colors.  If the custom color is defined then it's
+-- used (PREFERRED), otherwise a default color is used (FALLBACK).
+--
+-- Example:
+--  flexprompt_bubbles.bubble_colors.fg_stashes = "38;5;67"
+local purpose_colors = {
+    --PURPOSE            PREFERRED           FALLBACK
+    clean           = { "fg_clean",         "fg_green"      },
+    dirty           = { "fg_dirty",         "fg_yellow"     },
+    conflict        = { "bg_conflict",      "bg_red"        },
+    detached        = { "fg_detached",      "fg_muted"      },
+    staged          = { "fg_staged",        "fg_magenta"    },
+    stashcount      = { "fg_stashcount",    "fg_muted"      },
+    aheadbehind     = { "fg_aheadbehind",   "fg_cyan"       },
+    unpublished     = { "fg_unpublished",   "fg_lavender"   },
+    exitcode        = { "fg_exitcode",      "fg_red"        },
+    duration        = { "fg_duration",      "fg_orange"     },
+}
 
 -- luacheck: pop
 --------------------------------------------------------------------------------
@@ -115,12 +163,20 @@ local function transition_bg(symbol, from, to)
 end
 
 local function make_fluent_text(text, restore_color, fluent_color)
-    fluent_color = fluent_color or fg_fluent
+    local bc = flexprompt_bubbles.bubble_colors
+    fluent_color = fluent_color or bc.fg_fluent
     return fluent_color..text..restore_color
 end
 
 local function resolve_fluent_colors(text, fluent, normal)
     return text:gsub("\001", fluent):gsub("\002", normal)
+end
+
+local function get_purpose_color(purpose_name)
+    local definition = purpose_colors[purpose_name]
+    local bc = flexprompt_bubbles.bubble_colors
+    local code = bc[definition[1]]
+    return code and sgr(code) or bc[definition[2]]
 end
 
 --------------------------------------------------------------------------------
@@ -171,7 +227,7 @@ local function abbrev_child(parent, child)
 end
 
 local function abbrev_path(dir, fluent, all, relative, notrim)
-    -- Removeable drives could be floppy disks or CD-ROMs, which are slow.
+    -- Removable drives could be floppy disks or CD-ROMs, which are slow.
     -- Network drives are slow.  Invalid drives are unknown.  If the drive
     -- type might be slow then don't abbreviate.
     local tilde, tilde_len = dir:find("^~[/\\]+")
@@ -256,13 +312,14 @@ end
 local space_before = "space_before"
 local space_after = "space_after"
 local function addtext(segments, new_fg, text, padding)
+    local bc = flexprompt_bubbles.bubble_colors
     if text and text ~= "" then
         if padding == space_before then
             text = " "..text
         elseif padding == space_after then
             text = text.." "
         end
-        table.insert(segments, (segments.bg or bg_default)..new_fg..text)
+        table.insert(segments, (segments.bg or bc.bg_default)..new_fg..text)
     end
 end
 
@@ -271,23 +328,25 @@ local function can_use_powerline()
 end
 
 local function addosep(segments, sep, new_bg)
+    local bc = flexprompt_bubbles.bubble_colors
     if not can_use_powerline() then
         table.insert(segments, new_bg.." ")
     elseif new_bg == segments.bg then
-        table.insert(segments, segments.bg..fg_black..sep.sep[2]..fg_default)
+        table.insert(segments, segments.bg..bc.fg_black..sep.sep[2]..bc.fg_default)
     else
-        table.insert(segments, transition_bg(sep.cap[1], new_bg, segments.bg or bg_default))
+        table.insert(segments, transition_bg(sep.cap[1], new_bg, segments.bg or bc.bg_default))
     end
     segments.bg = new_bg
 end
 
 local function addcsep(segments, sep, new_bg)
+    local bc = flexprompt_bubbles.bubble_colors
     if not can_use_powerline() then
         table.insert(segments, " "..new_bg)
     elseif new_bg == segments.bg then
-        table.insert(segments, segments.bg..fg_black..sep.sep[1]..fg_default)
+        table.insert(segments, segments.bg..bc.fg_black..sep.sep[1]..bc.fg_default)
     else
-        table.insert(segments, transition_bg(sep.cap[2], segments.bg or bg_default, new_bg))
+        table.insert(segments, transition_bg(sep.cap[2], segments.bg or bc.bg_default, new_bg))
     end
     segments.bg = new_bg
 end
@@ -297,52 +356,95 @@ local ellipsis_char = ".."
 local ellipsis_char_width = console.cellcount(ellipsis_char)
 
 local function ellipsify(text, limit, fluent_restore_color)
-    if console.cellcount(text) <= limit then
+    if not console.explodeansi or console.cellcount(text) <= limit then
         return text
+    elseif console.ellipsify then
+        return console.ellipsify(text, limit, "right", ellipsis_char..(fluent_restore_color or ""))
     end
     local s = ""
     local truncate = 0
     local total = 0
-    local strings = console.explodeansi and console.explodeansi(text) or { text }
-    for _,t in ipairs(strings) do
-        if t:byte() == 27 then
-            s = s .. t
-        else
-            for i in unicode.iter(t) do
-                if total + ellipsis_char_width <= limit then
-                    truncate = #s
-                end
-                total = total + console.cellcount(i)
-                if total > limit then
-                    s = s:sub(1, truncate)
-                    if fluent_restore_color then
-                        s = s..make_fluent_text(ellipsis_char, fluent_restore_color)
-                    else
-                        s = s..ellipsis_char
+    local strings = console.explodeansi(text)
+    if console.cellcountiter then
+        for _,t in ipairs(strings) do
+            if t:byte() == 27 then
+                s = s .. t
+            else
+                for i, width in console.cellcountiter(t) do
+                    if total + ellipsis_char_width <= limit then
+                        truncate = #s
                     end
-                    break
+                    total = total + width
+                    if total > limit then
+                        s = s:sub(1, truncate)
+                        if fluent_restore_color then
+                            s = s..make_fluent_text(ellipsis_char, fluent_restore_color)
+                        else
+                            s = s..ellipsis_char
+                        end
+                        break
+                    end
+                    s = s..i
                 end
-                s = s..i
+            end
+        end
+    else
+        for _,t in ipairs(strings) do
+            if t:byte() == 27 then
+                s = s .. t
+            else
+                for i in unicode.iter(t) do
+                    if total + ellipsis_char_width <= limit then
+                        truncate = #s
+                    end
+                    total = total + console.cellcount(i)
+                    if total > limit then
+                        s = s:sub(1, truncate)
+                        if fluent_restore_color then
+                            s = s..make_fluent_text(ellipsis_char, fluent_restore_color)
+                        else
+                            s = s..ellipsis_char
+                        end
+                        break
+                    end
+                    s = s..i
+                end
             end
         end
     end
     return s
 end
 
-local function collect_info()
+local function collect_info(flags)
     local info = {}
-    local scm_info = flexprompt.get_scm_info()
+    local scm_info = flexprompt.get_scm_info(nil, flags)
     info.cwd = os.getcwd()
     if scm_info then
         for key, value in pairs(scm_info) do
             info[key] = value
         end
     end
-    info.vpn = flexprompt.get_vpn_info()
     if info.status then
         info.working = info.status.working
         info.staged = info.status.staged
+        info.unpublished = info.status.unpublished
     end
+    if info.type == "git" and git and type(git) == "table" and git.getaction then
+        local action, step, num_steps = git.getaction()
+        if action then
+            info.action = action
+            if step and num_steps then
+                info.step = step
+                info.num_steps = num_steps
+            end
+        end
+    end
+    return info
+end
+
+local function collect_right_info()
+    local info = {}
+    info.vpn = flexprompt.get_vpn_info()
     return info
 end
 
@@ -393,7 +495,7 @@ local function get_battery_status()
     local charging = status.charging
 
     -- Check for battery status failure.
-    if not level or level < 0 or (acpower and not charging) then
+    if not level or level < 0 then
         return (level or -1), "", "", acpower
     end
 
@@ -412,13 +514,20 @@ local function get_battery_status()
         if series then
             series = series[flexprompt.get_nerdfonts_version()]
             if series then
-                level_symbol = series[math.floor(level * (#series - 1) / 100)]
+                level_symbol = series[math.floor(level * (#series - 1) / 100) + 1]
                 if flexprompt.get_nerdfonts_width() == 2 then
                     level_symbol = level_symbol .. " "
                 end
             end
         end
-        batt_symbol = flexprompt.get_symbol(charging and "charging" or "battery")
+        if charging then
+            batt_symbol = flexprompt.get_symbol("charging")
+        elseif acpower then
+            batt_symbol = flexprompt.get_symbol("smartcharging")
+        end
+        if not batt_symbol or batt_symbol == "" then
+            batt_symbol = flexprompt.get_symbol("battery")
+        end
         level_symbol = level_symbol or ""
     end
 
@@ -429,6 +538,7 @@ update_battery_prompt = function()
     while true do
         local level, _, _, acpower = get_battery_status()
         if prev_battery_level ~= level or prev_battery_acpower ~= acpower then
+            flexprompt.refilter_module("lbubble")
             clink.refilterprompt()
         end
         coroutine.yield()
@@ -522,6 +632,7 @@ end
 --------------------------------------------------------------------------------
 
 local cached = {}
+local cached_right = {}
 
 local sep = {
     cap=flexprompt.choices.caps[sep_shape or "round"] or { "", "" },
@@ -541,13 +652,14 @@ local function which_icon(info)
 end
 
 local function get_grays(darker)
-    local gray1 = darker and bg_darkgray1 or bg_gray1
-    local gray2 = darker and bg_darkgray2 or bg_gray2
-    local gray3 = darker and bg_darkgray3 or bg_gray3
+    local bc = flexprompt_bubbles.bubble_colors
+    local gray1 = darker and bc.bg_darkgray1 or bc.bg_gray1
+    local gray2 = darker and bc.bg_darkgray2 or bc.bg_gray2
+    local gray3 = darker and bc.bg_darkgray3 or bc.bg_gray3
     return gray1, gray2, gray3
 end
 
-local function get_info()
+local function get_info(context)
     local wizard = flexprompt.get_wizard_state()
     if wizard then
         return {
@@ -560,7 +672,9 @@ local function get_info()
         }
     end
 
-    local info = flexprompt.promptcoroutine(collect_info)
+    local info = flexprompt.promptcoroutine(function()
+        return collect_info(context)
+    end)
     if info then
         info.refreshing = nil
         info.ready = true
@@ -571,7 +685,28 @@ local function get_info()
     return cached
 end
 
+local function get_right_info()
+    local wizard = flexprompt.get_wizard_state()
+    if wizard then
+        return {
+            ready = true,
+        }
+    end
+
+    local info = flexprompt.promptcoroutine(collect_right_info)
+    if info then
+        info.refreshing = nil
+        info.ready = true
+        cached_right = info
+    else
+        cached_right.refreshing = true
+    end
+    return cached_right
+end
+
 local function render_tbubble(args) -- luacheck: no unused
+    local bc = flexprompt_bubbles.bubble_colors
+
     local wizard = flexprompt.get_wizard_state()
     if wizard then
         return
@@ -587,25 +722,28 @@ local function render_tbubble(args) -- luacheck: no unused
     if symbol and #symbol > 0 then
         text = flexprompt.append_text(symbol, text)
     elseif flexprompt.get_flow() == "fluent" then
-        local pro = make_fluent_text("[History: ", fg_histlabel, fg_muted)
-        local epi = make_fluent_text("]", fg_histlabel, fg_muted)
+        local pro = make_fluent_text("[History: ", bc.fg_histlabel, bc.fg_muted)
+        local epi = make_fluent_text("]", bc.fg_histlabel, bc.fg_muted)
         text = pro .. text .. epi
     else
         text = "[History: " .. text .. "]"
     end
-    return text, fg_histlabel, "black"
+    return text, bc.fg_histlabel, "black"
 end
 
 local function render_lbubble(args, shorten) -- luacheck: no unused
+    local bc = flexprompt_bubbles.bubble_colors
+
     local darker = flexprompt.parse_arg_keyword(args, "d", "darker") or flexprompt_bubbles.darker
+    local nostashes = flexprompt.parse_arg_keyword(args, "ns", "nostashes")
     local include_icons = flexprompt.parse_arg_keyword(args, "i", "icons")
     local use_battery_level_icon = flexprompt.parse_arg_keyword(args, "li", "levelicon")
     local gray1, gray2, gray3 = get_grays(darker) -- luacheck: no unused
 
-    local info = get_info()
+    local info = get_info({ no_stashes=nostashes })
 
     local segments = {}
-    segments.bg = bg_default
+    segments.bg = bc.bg_default
 
     local scm_icon
     if info.type then
@@ -619,16 +757,16 @@ local function render_lbubble(args, shorten) -- luacheck: no unused
     if not cwd_color and info.type then
         cwd_color = flexprompt.get_scm_color(info.type)
         if not cwd_color then
-            cwd_color = (info.type == "git") and bg_git_default or bg_nongit_default
+            cwd_color = (info.type == "git") and bc.bg_git_default or bc.bg_nongit_default
         end
     end
-    cwd_color = cwd_color or bg_softblue
+    cwd_color = cwd_color or bc.bg_softblue
 
     local depth = flexprompt.get_dir_stack_depth()
     if #depth > 0 then
-        local bg_depth = blend_color(cwd_color, bg_blendmute, 0.66) or gray3
-        addosep(segments, sep, bg_depth)
-        addtext(segments, fg_white, depth, space_after)
+        local depth_color = blend_color(cwd_color, bc.bg_blendmute, 0.66) or gray3
+        addosep(segments, sep, depth_color)
+        addtext(segments, bc.fg_white, depth, space_after)
     end
 
     local cwd = flexprompt.maybe_apply_tilde(info.cwd)
@@ -648,49 +786,49 @@ local function render_lbubble(args, shorten) -- luacheck: no unused
             local smart = can_smart and cwd:sub(#parent + 1) or cwd
             smart = smart:gsub("^[\\/]+", ""):gsub("[\\/]+$", "")
             if shorten then
-                smart = abbrev_path(smart, fg_white, nil, parent)
+                smart = abbrev_path(smart, bc.fg_white, nil, parent)
                 if full_cwd then
                     parent = abbrev_path(parent, nil, true, nil, true)
                 end
             end
             local drive = path.getdrive(info.cwd)
             if full_cwd then
-                smart = make_fluent_text(path.join(parent, ""), fg_white)..smart
+                smart = make_fluent_text(path.join(parent, ""), bc.fg_white)..smart
             elseif drive and drive:upper() ~= "C:" then
-                smart = make_fluent_text(drive, fg_white).." "..smart
+                smart = make_fluent_text(drive, bc.fg_white).." "..smart
             else
-                smart = fg_white..smart
+                smart = bc.fg_white..smart
             end
-            addtext(segments, fg_black, flexprompt.append_text(scm_icon, smart))
+            addtext(segments, bc.fg_black, flexprompt.append_text(scm_icon, smart))
         else
             local text = cwd
             if shorten then
-                text = abbrev_path(text, fg_white)
+                text = abbrev_path(text, bc.fg_white)
             end
             if include_icons then
                 local icon = flexprompt.get_icon("cwd_module")
                 text = flexprompt.append_text(icon, text)
             end
-            addtext(segments, fg_white, text)
+            addtext(segments, bc.fg_white, text)
         end
     end
 
-    local fg_status
+    local status_color
     if not info.ready then
-        fg_status = fg_muted
+        status_color = bc.fg_muted
     elseif info.working then
-        fg_status = fg_yellow
+        status_color = get_purpose_color("dirty")
     elseif info.unpublished then
-        fg_status = fg_lavender
+        status_color = get_purpose_color("unpublished")
     else
-        fg_status = fg_green
+        status_color = get_purpose_color("clean")
     end
 
     -- addcsep(segments, sep, gray1)
 
     if info._error then
-        addcsep(segments, sep, bg_red)
-        addtext(segments, fg_white, "error", space_before)
+        addcsep(segments, sep, bc.bg_red)
+        addtext(segments, bc.fg_white, "error", space_before)
         addcsep(segments, sep, gray3)
     else
         addcsep(segments, sep, gray2)
@@ -698,7 +836,7 @@ local function render_lbubble(args, shorten) -- luacheck: no unused
             local which = which_icon(info)
             local icon = flexprompt.get_symbol(which)
             if which == "detached" and (icon == "" or flexprompt.get_flow() == "fluent") then
-                icon = make_fluent_text("detached", fg_status, fg_muted)
+                icon = make_fluent_text("detached", status_color, get_purpose_color("detached"))
             end
             if info.refreshing and icon then
                 local refresh = flexprompt.get_icon("refresh")
@@ -715,13 +853,13 @@ local function render_lbubble(args, shorten) -- luacheck: no unused
                 if info.type == "git" and flexprompt_git and type(flexprompt_git.postprocess_branch) == "function" then
                     local modified = flexprompt_git.postprocess_branch(branch)
                     if modified then
-                        branch = resolve_fluent_colors(modified, fg_fluent, fg_status)
+                        branch = resolve_fluent_colors(modified, bc.fg_fluent, status_color)
                     end
                 end
-                if shorten then
+                if branch and shorten then
                     local target = math.max(console.getwidth() / 4, 20)
                     if console.cellcount(branch) > target then
-                        branch = ellipsify(branch, target - 4, fg_status) .. branch:sub(-4)
+                        branch = ellipsify(branch, target - 4, status_color) .. branch:sub(-4)
                     end
                 end
             end
@@ -729,21 +867,27 @@ local function render_lbubble(args, shorten) -- luacheck: no unused
             local text = icon or ""
             text = flexprompt.append_text(text, branch)
             if not info.detached and info.remote and flexprompt.parse_arg_keyword(args, "sr", "showremote") then
-                text = text..make_fluent_text("->", fg_status, fg_muted)..ellipsify(info.remote, 10)
+                text = text..make_fluent_text("->", status_color, bc.fg_muted)..ellipsify(info.remote, 10)
             end
-            addtext(segments, fg_status, text, space_before)
+            addtext(segments, status_color, text, space_before)
         end
 
-        addcsep(segments, sep, info.conflict and bg_red or gray3)
+        addcsep(segments, sep, (info.action or info.conflict) and get_purpose_color("conflict") or gray3)
         local ahead = info.ahead or "0"
         local behind = info.behind or "0"
-        if info.working or info.staged or info.conflict or ahead ~= "0" or behind ~= "0" then
+        if info.action then
+            local text = bc.fg_white..info.action
+            if info.working and info.working.conflict > 0 then
+                text = text.." !"..info.working.conflict
+            end
+            addtext(segments, status_color, text, space_before)
+        elseif info.working or info.staged or info.conflict or info.stashcount or ahead ~= "0" or behind ~= "0" then
             if info.working or info.conflict then
                 local text = ""
                 if info.working and info.working.conflict > 0 then
-                    text = fg_white.."!"..info.working.conflict
+                    text = bc.fg_white.."!"..info.working.conflict
                 elseif info.conflict then
-                    text = fg_white.."!!"
+                    text = bc.fg_white.."!!"
                 else
                     local count = info.working.add + info.working.modify + info.working.delete
                     if count > 0 then
@@ -755,7 +899,7 @@ local function render_lbubble(args, shorten) -- luacheck: no unused
                         text = flexprompt.append_text(text, icon..info.working.untracked)
                     end
                 end
-                addtext(segments, fg_status, text, space_before)
+                addtext(segments, status_color, text, space_before)
             end
             if info.staged or ahead ~= "0" or behind ~= "0" then
                 local text = ""
@@ -763,8 +907,8 @@ local function render_lbubble(args, shorten) -- luacheck: no unused
                 if info.staged then
                     local count = info.staged.add + info.staged.modify + info.staged.delete + info.staged.rename
                     if count > 0 then
-                        fg = fg_magenta
-                        text = flexprompt.append_text(text, fg_magenta..flexprompt.get_symbol("staged")..count)
+                        fg = get_purpose_color("staged")
+                        text = flexprompt.append_text(text, fg..flexprompt.get_symbol("staged")..count)
                     end
                 end
                 if ahead ~= "0" or behind ~= "0" then
@@ -776,9 +920,9 @@ local function render_lbubble(args, shorten) -- luacheck: no unused
                         ab = flexprompt.append_text(ab, flexprompt.get_symbol("behindcount")..behind)
                     end
                     if fg then
-                        ab = fg_cyan..ab
+                        ab = get_purpose_color("aheadbehind")..ab
                     else
-                        fg = fg_cyan
+                        fg = get_purpose_color("aheadbehind")
                     end
                     text = flexprompt.append_text(text, ab)
                 end
@@ -787,11 +931,18 @@ local function render_lbubble(args, shorten) -- luacheck: no unused
                 end
                 addtext(segments, fg, text, space_before)
             end
+            if info.stashcount then
+                local icon = flexprompt.get_symbol("stashcount")
+                if icon ~= "" then
+                    local text = icon..info.stashcount
+                    addtext(segments, get_purpose_color("stashcount"), text, space_before)
+                end
+            end
         end
     end
 
-    addcsep(segments, sep, bg_default)
-    addtext(segments, "", fg_default)
+    addcsep(segments, sep, bc.bg_default)
+    addtext(segments, "", bc.fg_default)
 
     local prompt = table.concat(segments)
 
@@ -821,6 +972,8 @@ local function render_lbubble(args, shorten) -- luacheck: no unused
 end
 
 local function render_rbubble(args)
+    local bc = flexprompt_bubbles.bubble_colors
+
     local darker = flexprompt.parse_arg_keyword(args, "d", "darker") or flexprompt_bubbles.darker
     local include_icons = flexprompt.parse_arg_keyword(args, "i", "icons")
     local duration_colon = flexprompt.parse_arg_keyword(args, "c", "colons")
@@ -831,10 +984,10 @@ local function render_rbubble(args)
     end
 
     local gray1, gray2, gray3 = get_grays(darker) -- luacheck: no unused
-    local info = get_info()
+    local info = get_right_info()
 
     local segments = {}
-    segments.bg = bg_default
+    segments.bg = bc.bg_default
 
     if info.vpn then
         local text = ""
@@ -842,13 +995,13 @@ local function render_rbubble(args)
         for _, v in ipairs(info.vpn) do
             num = num + 1
             if num > 2 then
-                text = text..fg_muted..","..fg_red.."+More"
+                text = text..bc.fg_muted..","..bc.fg_red.."+More"
                 break
             end
             if text ~= "" then
-                text = text..fg_muted..","
+                text = text..bc.fg_muted..","
             end
-            local vpn_color = sgr(flexprompt_bubbles.vpn_colors[v.type] or fg_vpn)
+            local vpn_color = sgr(flexprompt_bubbles.vpn_colors[v.type] or bc.fg_vpn)
             text = text..vpn_color..v.name
         end
         if include_icons then
@@ -861,17 +1014,17 @@ local function render_rbubble(args)
     end
 
     addosep(segments, sep, gray3)
-    addtext(segments, fg_red, get_exit_code(include_icons, hex), space_after)
+    addtext(segments, get_purpose_color("exitcode"), get_exit_code(include_icons, hex), space_after)
 
     addosep(segments, sep, gray2)
-    addtext(segments, fg_orange, get_duration(include_icons, duration_colon), space_after)
+    addtext(segments, get_purpose_color("duration"), get_duration(include_icons, duration_colon), space_after)
 
     -- addosep(segments, sep, gray1)
 
-    addosep(segments, sep, bg_softgreen)
-    addtext(segments, fg_white, get_time(format, include_icons))
+    addosep(segments, sep, bc.bg_softgreen)
+    addtext(segments, bc.fg_white, get_time(format, include_icons))
 
-    addcsep(segments, sep, bg_default)
+    addcsep(segments, sep, bc.bg_default)
 
     local prompt = table.concat(segments)
     return prompt, "black", "black"
@@ -896,6 +1049,7 @@ clink.onbeginedit(function()
             detached=detect.detached,
             commit=detect.commit
         }
+        cached_right = {}
     end
 
     battery_coroutine = nil
@@ -903,7 +1057,13 @@ clink.onbeginedit(function()
     if show_color_contrast then
         show_color_contrast = nil
 
-        local bgs = { bg_softblue, bg_softgreen, bg_softmagenta, bg_git_default, bg_nongit_default, bg_red }
+        local bc = flexprompt_bubbles.bubble_colors
+        local bgs = {
+            bc.bg_softblue, bc.bg_softgreen, bc.bg_softmagenta,
+            bc.bg_git_default, bc.bg_nongit_default,
+            bc.bg_red
+        }
+
         if type(flexprompt.settings.cwd_colors) == "table" then
             for _, bg in ipairs(flexprompt.settings.cwd_colors) do
                 table.insert(bgs, sgr(bg.color))
@@ -916,11 +1076,11 @@ clink.onbeginedit(function()
         end
 
         for _, bg in ipairs(bgs) do
-            clink.print(bg.." "..fg_white.."hello/"..fg_fluent.."xyz"..fg_white.."/world "..sgr())
+            clink.print(bg.." "..bc.fg_white.."hello/"..bc.fg_fluent.."xyz"..bc.fg_white.."/world "..sgr())
         end
 
-        local grays = { bg_gray1, bg_gray2, bg_gray3 }
-        local fgs = { fg_red, fg_orange, fg_yellow, fg_green, fg_cyan, fg_magenta, fg_lavender }
+        local grays = { bc.bg_gray1, bc.bg_gray2, bc.bg_gray3 }
+        local fgs = { bc.fg_red, bc.fg_orange, bc.fg_yellow, bc.fg_green, bc.fg_cyan, bc.fg_magenta, bc.fg_lavender }
         for i, bg in ipairs(grays) do
             local s = ""
             for j = 0, 1 do
@@ -935,15 +1095,15 @@ clink.onbeginedit(function()
                 for k, f in ipairs(fgs) do
                     additional = additional..f..tostring(k)..string.char(96 + k).." "
                 end
-                s = s..bg.." "..fg_white.."abc "..fg_muted.."mno"..fg_white.." xyz "..additional..sgr()
+                s = s..bg.." "..bc.fg_white.."abc "..bc.fg_muted.."mno"..bc.fg_white.." xyz "..additional..sgr()
             end
             clink.print(s)
         end
 
-        clink.print(sgr()..bg_default..fg_vpn.." vpn connection "..sgr())
+        clink.print(sgr()..bc.bg_default..sgr(bc.fg_vpn).." vpn connection "..sgr())
         if flexprompt_bubbles.vpn_colors then
             for vpn, fg in pairs(flexprompt_bubbles.vpn_colors) do
-                clink.print(sgr()..bg_default..sgr(fg).." "..vpn.." connection "..sgr())
+                clink.print(sgr()..bc.bg_default..sgr(fg).." "..vpn.." connection "..sgr())
             end
         end
     end

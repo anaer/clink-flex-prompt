@@ -48,15 +48,15 @@ end
 
 --------------------------------------------------------------------------------
 -- ADMIN MODULE:  {admin:always:forcetext:text_options:icon_options:color_options}
---  - 'always' shows the module even when not running as an Adminstrator.
+--  - 'always' shows the module even when not running as an Administrator.
 --  - 'forcetext' shows text even if an icon is shown.
 --  - 'admintext=abc' sets admin mode text to 'abc' ('admintext=' for none).
 --  - 'normaltext=xyz' sets normal mode text to 'xyz' ('normaltext=' for none).
 --  - 'adminicon=X' sets the admin mode icon to 'X'.
 --  - 'normalicon=Y' sets the normal mode icon to 'Y'.
 --  - color_options override status colors as follows:
---      - normal=color_name,alt_color_name      When not running as an Adminstrator.
---      - admin=color_name,alt_color_name       When running as an Adminstrator.
+--      - normal=color_name,alt_color_name      When not running as an Administrator.
+--      - admin=color_name,alt_color_name       When running as an Administrator.
 --
 -- By default, it uses just an icon if icons are enabled and the font supports
 -- powerline characters.
@@ -148,6 +148,7 @@ local function admin_onbeginedit()
                     end
                     if is_admin ~= _cached_state.is_admin then
                         _cached_state.is_admin = is_admin
+                        flexprompt.refilter_module("admin")
                         clink.refilterprompt()
                     end
                 end
@@ -208,7 +209,7 @@ end
 local function collect_anyconnect_info()
     -- We may want to let the user provide a command to run
     -- but then how do we parse the output ?
-    -- they could give us the pattern to seach for as well
+    -- they could give us the pattern to search for as well
     local file, pclose = flexprompt.popenyield("vpncli state 2>nul")
     if not file then return end
 
@@ -246,9 +247,10 @@ local function collect_anyconnect_info()
         --  >> state: Disconnected
         --  >> state: Disconnected
         --  >> notice: Ready to connect.
-        if candidate and #candidate > 0 and candidate:find("state") and not candidate:find("Disconnected") then
-            -- If at least one "state" line doesn't say "Disconnected", then
-            -- consider it to be connected.
+        if candidate and #candidate > 0 and candidate:find("state") and
+                not candidate:find("Disconnected") and not candidate:find("Unknown") then
+            -- If at least one "state" line doesn't say "Disconnected" or
+            -- "Unknown", then consider it to be connected.
             connected = true
         end
     end
@@ -390,14 +392,17 @@ local function get_battery_status(levelicon, onlyicon)
     acpower = status.acpower
     charging = status.charging
 
-    if not level or level < 0 or (acpower and not charging) then
+    if not level or level < 0 then
         return "", 0
     end
 
     local batt_symbol
     if charging then
         batt_symbol = flexprompt.get_symbol("charging")
-    else
+    elseif acpower then
+        batt_symbol = flexprompt.get_symbol("smartcharging")
+    end
+    if not batt_symbol or batt_symbol == "" then
         batt_symbol = flexprompt.get_symbol("battery")
     end
 
@@ -439,6 +444,7 @@ local function update_battery_prompt(levelicon, onlyicon)
     while true do
         local status,level = get_battery_status(levelicon, onlyicon)
         if prev_battery_status ~= status or prev_battery_level ~= level then
+            flexprompt.refilter_module("battery")
             clink.refilterprompt()
         end
         coroutine.yield()
@@ -487,7 +493,8 @@ local function render_battery(args)
         -- The "22;" defeats the color parsing that would normally generate
         -- corresponding fg and bg colors even though only an explicit bg color
         -- was provided (versus a usual {fg=x,bg=y} color table).
-        color = "22;" .. color.bg .. ";30"
+        local c = flexprompt.lookup_color(color)
+        color = "22;" .. c.bg .. ";30"
     end
 
     local segments = {}
@@ -713,6 +720,111 @@ local function render_cwd(args)
 end
 
 --------------------------------------------------------------------------------
+-- DISKSPACE MODULE:  {diskspace:when=threshold_percent:breakleft:breakright}
+--  - threshold_percent is the percentage above which to show used disk space
+--    (defaults to 0, which always shows the diskspace segment).
+--  - 'breakleft' adds an empty segment to left of battery in rainbow style.
+--  - 'breakright' adds an empty segment to right of battery in rainbow style.
+--
+-- The 'breakleft' and 'breakright' options may look better than having
+-- diskspace segment colors adjacent to other similarly colored segments in
+-- rainbow style.
+--
+-- This shows percentage of disk space used on the drive containing the current
+-- working directory.
+--
+-- Requires Clink v1.8.5 or newer, otherwise the module does nothing.
+
+local diskspace_used_colors =
+{
+    ["90"] = {
+        fg = "38;2;239;65;54",
+        bg = "48;2;239;65;54"
+    },
+    ["80"] = {
+        fg = "38;2;252;176;64",
+        bg = "48;2;252;176;64"
+    },
+    ["70"] = {
+        fg = "38;2;248;237;50",
+        bg = "48;2;248;237;50"
+    },
+    ["60"] = {
+        fg = "38;2;142;198;64",
+        bg = "48;2;142;198;64"
+    },
+    ["50"] = {
+        fg = "38;2;1;148;68",
+        bg = "48;2;1;148;68"
+    },
+}
+
+local function render_diskspace(args)
+    -- Get the disk free space details.
+    local free, total
+    if os.getdiskfreespace then
+        free, total = os.getdiskfreespace()
+    end
+    if not free or not total or total == 0 or free > total then
+        return
+    end
+
+    -- The 'when' arg overrides when to show the diskspace segment.
+    local when = flexprompt.parse_arg_token(args, "w", "when") or "0"
+    when = tonumber(when) / 100
+
+    -- Show nothing if the used percentage is below the threshold.
+    local used_percent = (total - free) / total
+    if used_percent < when then
+        return
+    end
+
+    -- Choose the color based on the used percentage.
+    local color
+    if used_percent > 0.9 then      color = diskspace_used_colors["90"]
+    elseif used_percent > 0.8 then  color = diskspace_used_colors["80"]
+    elseif used_percent > 0.7 then  color = diskspace_used_colors["70"]
+    elseif used_percent > 0.6 then  color = diskspace_used_colors["60"]
+    else                            color = diskspace_used_colors["50"]
+    end
+
+    -- Use the used disk space percentage as the text.
+    local text
+    used_percent = used_percent * 100
+    used_percent = math.min(used_percent, 100)
+    used_percent = math.max(used_percent, 0)
+    text = string.format("%.1f%%", used_percent)
+
+    -- Add icon or fluent text.
+    local icon
+    local flow = flexprompt.get_flow()
+    if flow ~= "fluent" then
+        icon = flexprompt.get_symbol("diskspace_module")
+    end
+    if icon == "" or flow == "fluent" then
+        icon = flexprompt.make_fluent_text("disk used")
+    end
+    text = flexprompt.append_text(icon, text)
+
+    -- The 'breakleft' and 'breakright' args add blank segments to force a color
+    -- break between rainbow segments, in case adjacent colors are too similar.
+    local bl, br
+    local style = flexprompt.get_style()
+    if style == "rainbow" then
+        bl = flexprompt.parse_arg_keyword(args, "bl", "breakleft")
+        br = flexprompt.parse_arg_keyword(args, "br", "breakright")
+    end
+
+    -- Return the segment(s).
+    local segments = {}
+    if bl then table.insert(segments, { "", "realblack" }) end
+    table.insert(segments, { text, color, "realblack" })
+    if br then table.insert(segments, { "", "realblack" }) end
+
+    return segments
+end
+
+--------------------------------------------------------------------------------
 -- DURATION MODULE:  {duration:format=format_name:tenths:color=color_name,alt_color_name}
 --  - format_name is the format to use:
 --      - "colons" is "H:M:S" format.
@@ -911,10 +1023,11 @@ local function render_exit(args)
 end
 
 --------------------------------------------------------------------------------
--- GIT MODULE:  {git:nostaged:noaheadbehind:counts:color_options}
+-- GIT MODULE:  {git:nostaged:noaheadbehind:nostashes:counts:color_options}
 --  - 'nountracked' omits untracked files.
 --  - 'nostaged' omits the staged details.
 --  - 'noaheadbehind' omits the ahead/behind details.
+--  - 'nostashes' omits the count of stashes.
 --  - 'showremote' shows the branch and its remote.
 --  - 'submodules' includes status for submodules.
 --  - 'counts' shows the count of added/modified/etc files.
@@ -924,6 +1037,7 @@ end
 --      - dirty=color_name,alt_color_name           When status is dirty.
 --      - remote=color_name,alt_color_name          For ahead/behind details.
 --      - staged=color_name,alt_color_name          For staged details.
+--      - stashcount=color_name,alt_color_name      For count of stashes.
 --      - unknown=color_name,alt_color_name         When status is unknown.
 --      - unpublished=color_name,alt_color_name     When status is clean but branch is not published.
 
@@ -931,7 +1045,7 @@ end
 flexprompt_git = flexprompt_git or {}
 --  .postprocess_branch = function(string), returns string, can modify the branch name string.
 
-local git = {}
+local git_info = {}
 local fetched_repos = {}
 
 -- Add status details to the segment text.
@@ -956,7 +1070,7 @@ local function add_details(text, details, include_counts)
         if rename > 0 then
             text = flexprompt.append_text(text, flexprompt.get_symbol("renamecount") .. rename)
         end
-    else
+    elseif (add + modify + delete + rename) > 0 then
         text = flexprompt.append_text(text, flexprompt.get_symbol("summarycount") .. (add + modify + delete + rename))
     end
     if untracked > 0 then
@@ -981,7 +1095,7 @@ end
 -- Collects git status info.
 --
 -- Uses async coroutine calls.
-local function collect_git_info(no_untracked, includeSubmodules)
+local function collect_git_info(no_untracked, no_stashes, includeSubmodules)
     local git_dir, wks_dir = flexprompt.get_git_dir()
     git_dir = git_dir and git_dir:lower()
     wks_dir = wks_dir and wks_dir:lower()
@@ -993,7 +1107,14 @@ local function collect_git_info(no_untracked, includeSubmodules)
     local status = flexprompt.get_git_status(no_untracked, includeSubmodules)
     local conflict = flexprompt.get_git_conflict()
     local ahead, behind = flexprompt.get_git_ahead_behind()
-    return { status=status, conflict=conflict, ahead=ahead, behind=behind, submodule=submodule, finished=true }
+    local info = { status=status, conflict=conflict, ahead=ahead, behind=behind, submodule=submodule, finished=true }
+    if not no_stashes and git.getstashcount then
+        local count = git.getstashcount()
+        if count and count > 0 then
+            info.stashcount = count
+        end
+    end
+    return info
 end
 
 local git_colors =
@@ -1003,6 +1124,7 @@ local git_colors =
     dirty       = { "d",   "dirty",        "vcs_dirty",         },
     remote      = { "r",   "remote",       "vcs_remote",        },
     staged      = { "s",   "staged",       "vcs_staged",        },
+    stashcount  = { "sc",  "stashcount",   "vcs_stashcount",    },
     unknown     = { "u",   "unknown",      "vcs_unknown",       },
     unpublished = { "up",  "unpublished",  "vcs_unpublished",   },
 }
@@ -1042,9 +1164,10 @@ local function render_git(args)
 
         -- Collect or retrieve cached info.
         local noUntracked = flexprompt.parse_arg_keyword(args, "nu", "nountracked")
+        local noStashes = flexprompt.parse_arg_keyword(args, "ns", "nostashes")
         local includeSubmodules = flexprompt.parse_arg_keyword(args, "sm", "submodules")
-        info, refreshing = flexprompt.prompt_info(git, git_dir, branch, function ()
-            return collect_git_info(noUntracked, includeSubmodules)
+        info, refreshing = flexprompt.prompt_info(git_info, git_dir, branch, function ()
+            return collect_git_info(noUntracked, noStashes, includeSubmodules)
         end)
 
         -- Add remote to branch name if requested.
@@ -1145,6 +1268,14 @@ local function render_git(args)
             color, altcolor = parse_color_token(args, colors)
             table.insert(segments, { text, color, altcolor })
         end
+    end
+
+    -- Count of stashes.
+    if info and info.stashcount then
+        text = flexprompt.append_text("", flexprompt.get_symbol("stashcount") .. info.stashcount)
+        colors = git_colors.stashcount
+        color, altcolor = parse_color_token(args, colors)
+        table.insert(segments, { text, color, altcolor })
     end
 
     return segments
@@ -1672,10 +1803,11 @@ local function render_python(args)
 end
 
 --------------------------------------------------------------------------------
--- SCM MODULE:  {scm:nostaged:noaheadbehind:counts:color_options}
+-- SCM MODULE:  {scm:nostaged:nostashes:noaheadbehind:counts:color_options}
 --  - 'noaheadbehind' omits the ahead/behind details.
 --  - 'noconflict' omits conflict info.
 --  - 'nostaged' omits the staged details.
+--  - 'nostashes' omits the count of stashes.
 --  - 'nosubmodules' omits status for submodules.
 --  - 'nountracked' omits untracked files.
 --  - 'showremote' shows the branch and its remote.
@@ -1686,6 +1818,7 @@ end
 --      - dirty=color_name,alt_color_name           When status is dirty.
 --      - remote=color_name,alt_color_name          For ahead/behind details.
 --      - staged=color_name,alt_color_name          For staged details.
+--      - stashcount=color_name,alt_color_name      For count of stashes.
 --      - unknown=color_name,alt_color_name         When status is unknown.
 --      - unpublished=color_name,alt_color_name     When status is clean but branch is not published.
 
@@ -1712,6 +1845,7 @@ local scm_colors =
     dirty       = { "d",   "dirty",        "vcs_dirty",         },
     remote      = { "r",   "remote",       "vcs_remote",        },
     staged      = { "s",   "staged",       "vcs_staged",        },
+    stashcount  = { "sc",  "stashcount",   "vcs_stashcount",    },
     unknown     = { "u",   "unknown",      "vcs_unknown",       },
     unpublished = { "up",  "unpublished",  "vcs_unpublished",   },
 }
@@ -1743,6 +1877,7 @@ local function render_scm(args)
         local flags = {}
         flags.no_ahead_behind = flexprompt.settings.no_ahead_behind or flexprompt.parse_arg_keyword(args, "nab", "noaheadbehind")
         flags.no_conflict = flexprompt.settings.no_conflict or flexprompt.parse_arg_keyword(args, "nc", "noconflict")
+        flags.no_stashes = flexprompt.settings.no_stashes or flexprompt.parse_arg_keyword(args, "nsc", "nostashes")
         flags.no_submodules = flexprompt.settings.no_submodules or flexprompt.parse_arg_keyword(args, "ns", "nosubmodules")
         flags.no_untracked = flexprompt.settings.no_untracked or flexprompt.parse_arg_keyword(args, "nu", "nountracked")
         flags.show_remote = not flexprompt.settings.no_remote and flexprompt.parse_arg_keyword(args, "sr", "showremote")
@@ -1876,6 +2011,14 @@ local function render_scm(args)
             color, altcolor = parse_color_token(args, colors)
             table.insert(segments, { text, color, altcolor })
         end
+    end
+
+    -- Count of stashes.
+    if info.stashcount then
+        text = flexprompt.append_text("", flexprompt.get_symbol("stashcount") .. info.stashcount)
+        colors = scm_colors.stashcount
+        color, altcolor = parse_color_token(args, colors)
+        table.insert(segments, { text, color, altcolor })
     end
 
     return segments
@@ -2061,7 +2204,7 @@ local function collect_vpn_info()
             line = line .. "..."
             break
         end
-        line = line .. c
+        line = line .. c.name
     end
     return { connection=line }
 end
@@ -2132,6 +2275,10 @@ local function info_git(dir, tested_info, flags) -- luacheck: no unused
         if not flags.no_ahead_behind then
             info.ahead, info.behind = flexprompt.get_git_ahead_behind()
         end
+        if not flags.no_stashes and git and git.getstashcount then
+            local count = git.getstashcount()
+            info.stashcount = count and count > 0 and count or nil
+        end
         if not flags.no_conflict then
             info.conflict = flexprompt.get_git_conflict()
         end
@@ -2152,6 +2299,7 @@ end
 
 local function info_hg(dir, tested_info, flags) -- luacheck: no unused
     local info = {}
+    flags = flags or {}
     info.type = "hg"
     -- Get summary info from Mercurial.
     do
@@ -2223,6 +2371,7 @@ end
 
 local function info_svn(dir, tested_info, flags) -- luacheck: no unused
     local info = {}
+    flags = flags or {}
     info.type = "svn"
     -- Get branch name.
     if not info._error then
@@ -2347,14 +2496,15 @@ clink.onbeginedit(builtin_modules_onbeginedit)
 flexprompt.add_module( "anyconnect",    render_anyconnect                   )
 flexprompt.add_module( "battery",       render_battery                      )
 flexprompt.add_module( "break",         render_break                        )
-flexprompt.add_module( "conda",         render_conda,       { nerdfonts2={"🅒","🅒"} } )
-flexprompt.add_module( "cwd",           render_cwd,         { coloremoji="📁", nerdfonts2={""," "} } )
-flexprompt.add_module( "duration",      render_duration,    { coloremoji="⌛", nerdfonts2={""," "} } )
+flexprompt.add_module( "conda",         render_conda,       { nerdfonts2={"🅒","🅒"}, nerdfonts3={"🅒","🅒"} } )
+flexprompt.add_module( "cwd",           render_cwd,         { coloremoji="📁", nerdfonts2={""," "}, nerdfonts3={""," "} } )
+flexprompt.add_module( "diskspace",     render_diskspace,   { nerdfonts2={"", " "}, nerdfonts3={"", " "} } )
+flexprompt.add_module( "duration",      render_duration,    { coloremoji="⌛", nerdfonts2={""," "}, nerdfonts3={""," "} } )
 flexprompt.add_module( "env",           render_env                          )
 flexprompt.add_module( "exit",          render_exit                         )
-flexprompt.add_module( "git",           render_git,         { nerdfonts2={""," "} } )
+flexprompt.add_module( "git",           render_git,         { nerdfonts2={""," "}, nerdfonts3={""," "} } )
 flexprompt.add_module( "hg",            render_hg                           )
-flexprompt.add_module( "histlabel",     render_histlabel,   { nerdfonts2={""," "} } )
+flexprompt.add_module( "histlabel",     render_histlabel,   { nerdfonts2={""," "}, nerdfonts3={""," "} } )
 flexprompt.add_module( "k8s",           render_k8s,         { nerdfonts2={"ﴱ","ﴱ "}, nerdfonts3={"󰠳","󰠳 "} } )
 flexprompt.add_module( "maven",         render_maven                        )
 flexprompt.add_module( "npm",           render_npm                          )
@@ -2362,15 +2512,15 @@ flexprompt.add_module( "python",        render_python,      { nerdfonts2={"",
 flexprompt.add_module( "scm",           render_scm,         { "scm" }       ) -- Placeholder to check icon config.
 flexprompt.add_module( "svn",           render_svn                          )
 flexprompt.add_module( "time",          render_time,        { coloremoji="🕒", nerdfonts2={"",""}, nerdfonts3={"",""} } ) -- Note: nerdfonts are always mono width for this.
-flexprompt.add_module( "user",          render_user,        { coloremoji="🙍", nerdfonts2={""," "} } )
-flexprompt.add_module( "vpn",           render_vpn,         { coloremoji="☁️", nerdfonts2={""," "} } )
+flexprompt.add_module( "user",          render_user,        { coloremoji="🙍", nerdfonts2={""," "}, nerdfonts3={""," "} } )
+flexprompt.add_module( "vpn",           render_vpn,         { coloremoji="☁️", nerdfonts2={""," "}, nerdfonts3={""," "} } )
 
 if os.isuseradmin then
 flexprompt.add_module( "admin",         render_admin                        )
 end
 
 if clink.onaftercommand then
-flexprompt.add_module( "keymap",        render_keymap,      { nerdfonts2={""," "} } )
+flexprompt.add_module( "keymap",        render_keymap,      { nerdfonts2={""," "}, nerdfonts3={""," "} } )
 end
 
 if rl.insertmode then
