@@ -29,7 +29,7 @@ flexprompt.settings.right_frame = "none"
 -- 左侧提示栏
 -- {time:dim:color=green:format=%a %H:%M:%S}  周二 14:42:33
 -- {time:dim:color=green:format=%H:%M:%S}  14:42:33
-flexprompt.settings.left_prompt = "{time:dim:color=green:format=%H:%M:%S}{histlabel}{cwd:color=magenta:type=smart}{git:username:nountracked:counts}{exit}{duration}"
+flexprompt.settings.left_prompt = "{python}{time:dim:color=green:format=%H:%M:%S}{histlabel}{cwd:color=magenta:type=smart}{git:username:nountracked:counts}{exit}{duration}"
 -- 右侧提示栏 可能存在兼容问题, 导致光标消失 回车也没用
 flexprompt.settings.right_prompt = ""
 
